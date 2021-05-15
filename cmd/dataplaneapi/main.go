@@ -19,30 +19,33 @@ import (
 	"fmt"
 	"os"
 	"path"
-
-	log "github.com/sirupsen/logrus"
+	"syscall"
 
 	loads "github.com/go-openapi/loads"
+	"github.com/go-openapi/runtime"
+	"github.com/go-openapi/runtime/security"
 	flags "github.com/jessevdk/go-flags"
+	log "github.com/sirupsen/logrus"
 
+	"github.com/haproxytech/client-native/v2/storage"
 	"github.com/haproxytech/dataplaneapi"
 	"github.com/haproxytech/dataplaneapi/configuration"
 	"github.com/haproxytech/dataplaneapi/operations"
 )
 
-//GitRepo ...
+// GitRepo ...
 var GitRepo = ""
 
-//GitTag ...
+// GitTag ...
 var GitTag = ""
 
-//GitCommit ...
+// GitCommit ...
 var GitCommit = "dev"
 
-//GitDirty ...
+// GitDirty ...
 var GitDirty = ".dirty"
 
-//BuildTime ...
+// BuildTime ...
 var BuildTime = ""
 
 func init() {
@@ -68,7 +71,6 @@ func main() {
 }
 
 func startServer(cfg *configuration.Configuration) (reload configuration.AtomicBool) {
-
 	swaggerSpec, err := loads.Embedded(dataplaneapi.SwaggerJSON, dataplaneapi.FlatSwaggerJSON)
 	if err != nil {
 		log.Fatalln(err)
@@ -79,8 +81,6 @@ func startServer(cfg *configuration.Configuration) (reload configuration.AtomicB
 
 	api := operations.NewDataPlaneAPI(swaggerSpec)
 	server := dataplaneapi.NewServer(api)
-	//nolint
-	defer server.Shutdown()
 
 	parser := flags.NewParser(server, flags.Default)
 	parser.ShortDescription = "HAProxy Data Plane API"
@@ -116,7 +116,26 @@ func startServer(cfg *configuration.Configuration) (reload configuration.AtomicB
 		return
 	}
 
-	err = cfg.Load(dataplaneapi.SwaggerJSON, server.Host, server.Port)
+	err = cfg.Load()
+	if err != nil {
+		log.Fatalln(err)
+	}
+
+	if cfg.HAProxy.UID != 0 {
+		if err = syscall.Setuid(cfg.HAProxy.UID); err != nil {
+			log.Fatalln("set uid:", err)
+		}
+	}
+
+	if cfg.HAProxy.GID != 0 {
+		if err = syscall.Setgid(cfg.HAProxy.GID); err != nil {
+			log.Fatalln("set gid:", err)
+		}
+	}
+
+	// incorporate changes from file to global settings
+	dataplaneapi.SyncWithFileSettings(server, cfg)
+	err = cfg.LoadRuntimeVars(dataplaneapi.SwaggerJSON, server.Host, server.Port)
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -125,8 +144,10 @@ func startServer(cfg *configuration.Configuration) (reload configuration.AtomicB
 	log.Infof("Build from: %s", GitRepo)
 	log.Infof("Build date: %s", BuildTime)
 
+	configuration.HandlePIDFile(cfg.HAProxy)
+
 	if cfg.Mode.Load() == "cluster" {
-		if cfg.Cluster.Certificate.Fetched.Load() {
+		if cfg.Cluster.CertificateFetched.Load() {
 			log.Info("HAProxy Data Plane API in cluster mode")
 			server.TLSCertificate = flags.Filename(path.Join(cfg.GetClusterCertDir(), fmt.Sprintf("dataplane-%s.crt", cfg.Name.Load())))
 			server.TLSCertificateKey = flags.Filename(path.Join(cfg.GetClusterCertDir(), fmt.Sprintf("dataplane-%s.key", cfg.Name.Load())))
@@ -134,35 +155,65 @@ func startServer(cfg *configuration.Configuration) (reload configuration.AtomicB
 			if server.TLSPort == 0 {
 				server.TLSPort = server.Port
 			}
+			// override storage dir location
+			storageDir := cfg.Cluster.StorageDir.Load()
+			if storageDir != "" {
+				cfg.HAProxy.MapsDir = path.Join(storageDir, string(storage.MapsType))
+				cfg.HAProxy.SSLCertsDir = path.Join(storageDir, string(storage.SSLType))
+				cfg.HAProxy.SpoeDir = path.Join(storageDir, string(storage.SpoeType))
+				cfg.HAProxy.SpoeTransactionDir = path.Join(storageDir, string(storage.SpoeTransactionsType))
+				cfg.HAProxy.BackupsDir = path.Join(storageDir, string(storage.BackupsType))
+				cfg.HAProxy.TransactionDir = path.Join(storageDir, string(storage.TransactionsType))
+				// dataplane internal
+				cfg.HAProxy.ClusterTLSCertDir = path.Join(storageDir, "certs-cluster")
+				cfg.Cluster.CertificateDir.Store(path.Join(storageDir, "certs-cluster"))
+			}
 		} else if cfg.Cluster.ActiveBootstrapKey.Load() != "" {
 			cfg.Notify.BootstrapKeyChanged.NotifyWithRetry()
 		}
 	}
+
 	err = cfg.Save()
 	if err != nil {
 		log.Fatalln(err)
 	}
 
+	// Applies when the Authorization header is set with the Basic scheme
+	api.BasicAuthAuth = configuration.AuthenticateUser
+	api.BasicAuthenticator = func(authentication security.UserPassAuthentication) runtime.Authenticator {
+		// if mTLS is enabled with backing Certificate Authority, skipping basic authentication
+		if len(server.TLSCACertificate) > 0 && server.TLSPort > 0 {
+			return runtime.AuthenticatorFunc(func(i interface{}) (bool, interface{}, error) {
+				return true, "", nil
+			})
+		}
+		return security.BasicAuthRealm("", authentication)
+	}
+
+	dataplaneapi.ContextHandler.Init()
 	go func() {
-		for range cfg.Notify.Reload.Subscribe("main") {
-			log.Info("HAProxy Data Plane API reloading")
-			reload.Store(true)
-			cfg.UnSubscribeAll()
-			err := server.Shutdown()
-			if err != nil {
-				log.Fatalln(err)
-			}
+		<-cfg.Notify.Reload.Subscribe("main")
+		log.Info("HAProxy Data Plane API reloading")
+		reload.Store(true)
+		cfg.UnSubscribeAll()
+		dataplaneapi.ContextHandler.Cancel()
+		err := server.Shutdown()
+		if err != nil {
+			log.Fatalln(err)
 		}
 	}()
 
 	go func() {
-		for range cfg.Notify.Shutdown.Subscribe("main") {
-			log.Info("HAProxy Data Plane API shuting down")
+		select {
+		case <-cfg.Notify.Shutdown.Subscribe("main"):
+			log.Info("HAProxy Data Plane API shutting down")
 			err := server.Shutdown()
 			if err != nil {
 				log.Fatalln(err)
 			}
 			os.Exit(0)
+		case <-dataplaneapi.ContextHandler.Context().Done():
+			return
 		}
 	}()
 
@@ -170,5 +221,8 @@ func startServer(cfg *configuration.Configuration) (reload configuration.AtomicB
 	if err := server.Serve(); err != nil {
 		log.Fatalln(err)
 	}
+
+	defer server.Shutdown() // nolint:errcheck
+
 	return reload
 }

@@ -17,36 +17,39 @@ package handlers
 
 import (
 	"fmt"
-	"strconv"
+	"path"
 
 	"github.com/go-openapi/runtime/middleware"
 	"github.com/google/renameio"
 	client_native "github.com/haproxytech/client-native/v2"
+	"github.com/haproxytech/client-native/v2/misc"
+	"github.com/haproxytech/client-native/v2/models"
+	"github.com/haproxytech/client-native/v2/storage"
+
 	"github.com/haproxytech/dataplaneapi/configuration"
 	"github.com/haproxytech/dataplaneapi/haproxy"
 	"github.com/haproxytech/dataplaneapi/operations/cluster"
 	"github.com/haproxytech/dataplaneapi/operations/discovery"
-	"github.com/haproxytech/models/v2"
 )
 
-//CreateClusterHandlerImpl implementation of the CreateClusterHandler interface
+// CreateClusterHandlerImpl implementation of the CreateClusterHandler interface
 type CreateClusterHandlerImpl struct {
 	Client      *client_native.HAProxyClient
 	Config      *configuration.Configuration
 	ReloadAgent haproxy.IReloadAgent
 }
 
-//GetClusterHandlerImpl implementation of the GetClusterHandler interface
+// GetClusterHandlerImpl implementation of the GetClusterHandler interface
 type GetClusterHandlerImpl struct {
 	Config *configuration.Configuration
 }
 
-//ClusterInitiateCertificateRefreshHandlerImpl implementation of the ClusterInitiateCertificateRefreshHandler interface
+// ClusterInitiateCertificateRefreshHandlerImpl implementation of the ClusterInitiateCertificateRefreshHandler interface
 type ClusterInitiateCertificateRefreshHandlerImpl struct {
 	Config *configuration.Configuration
 }
 
-//Handle executing the request and returning a response
+// Handle executing the request and returning a response
 func (h *ClusterInitiateCertificateRefreshHandlerImpl) Handle(params cluster.InitiateCertificateRefreshParams, principal interface{}) middleware.Responder {
 	if h.Config.Mode.Load() != "cluster" {
 		return cluster.NewInitiateCertificateRefreshForbidden()
@@ -67,20 +70,81 @@ func (h *CreateClusterHandlerImpl) err500(err error, transaction *models.Transac
 	})
 }
 
+func (h *CreateClusterHandlerImpl) err406(err error, transaction *models.Transaction) middleware.Responder {
+	// 406 Not Acceptable
+	if transaction != nil {
+		_ = h.Client.Configuration.DeleteTransaction(transaction.ID)
+	}
+	msg := err.Error()
+	code := int64(406)
+	return cluster.NewPostClusterDefault(406).WithPayload(&models.Error{
+		Code:    &code,
+		Message: &msg,
+	})
+}
+
+func (h *CreateClusterHandlerImpl) err409(err error, transaction *models.Transaction) middleware.Responder {
+	// 409 Conflict
+	if transaction != nil {
+		_ = h.Client.Configuration.DeleteTransaction(transaction.ID)
+	}
+	msg := err.Error()
+	code := int64(409)
+	return cluster.NewPostClusterDefault(409).WithPayload(&models.Error{
+		Code:    &code,
+		Message: &msg,
+	})
+}
+
 func (h *CreateClusterHandlerImpl) Handle(params cluster.PostClusterParams, principal interface{}) middleware.Responder {
-	key := h.Config.BootstrapKey.Load()
+	key := h.Config.Cluster.BootstrapKey.Load()
 	if params.Data.BootstrapKey != "" && key != params.Data.BootstrapKey {
+		// before we switch to cluster mode, check if folder for storage is compatible with dataplane
+		key, err := configuration.DecodeBootstrapKey(params.Data.BootstrapKey)
+		if err != nil {
+			return h.err406(err, nil)
+		}
+		storageDir := key["storage-dir"]
+		if storageDir != "" {
+			_, errStorage := misc.CheckOrCreateWritableDirectory(storageDir)
+			if errStorage != nil {
+				return h.err409(errStorage, nil)
+			}
+			dirs := []storage.FileType{
+				storage.BackupsType, storage.MapsType, storage.SSLType,
+				storage.SpoeTransactionsType, storage.SpoeType,
+				storage.TransactionsType,
+				storage.FileType("certs-cluster"),
+			}
+			for _, dir := range dirs {
+				_, errStorage := misc.CheckOrCreateWritableDirectory(path.Join(storageDir, string(dir)))
+				if errStorage != nil {
+					return h.err409(errStorage, nil)
+				}
+			}
+			h.Config.Cluster.StorageDir.Store(storageDir)
+		}
+		// enforcing API advertising options
+		if a := params.AdvertisedAddress; a != nil {
+			h.Config.APIOptions.APIAddress = *a
+		}
+		if p := params.AdvertisedPort; p != nil {
+			h.Config.APIOptions.APIPort = *p
+		}
 		h.Config.Mode.Store("cluster")
-		h.Config.BootstrapKey.Store(params.Data.BootstrapKey)
+		h.Config.Cluster.BootstrapKey.Store(params.Data.BootstrapKey)
 		h.Config.Cluster.Clear()
-		h.Config.Notify.BootstrapKeyChanged.Notify()
+		// ensuring configuration file saving occurs before notifying the monitor about the bootstrap key change
+		defer func() {
+			h.Config.Notify.BootstrapKeyChanged.Notify()
+		}()
 	}
 	if params.Data.Mode == "single" && h.Config.Mode.Load() != params.Data.Mode {
 		// by default we are cleaning configuration
 		if params.Configuration == nil || *params.Configuration != "keep" {
 			version, errVersion := h.Client.Configuration.GetVersion("")
 			if errVersion != nil || version < 1 {
-				//silently fallback to 1
+				// silently fallback to 1
 				version = 1
 			}
 			transaction, err := h.Client.Configuration.StartTransaction(version)
@@ -110,7 +174,7 @@ func (h *CreateClusterHandlerImpl) Handle(params cluster.PostClusterParams, prin
 				}
 			}
 
-			//now create dummy frontend so haproxy does not complain
+			// now create dummy frontend so haproxy does not complain
 			err = h.Client.Configuration.CreateFrontend(&models.Frontend{Name: "disabled"}, transaction.ID, 0)
 			if err != nil {
 				return h.err500(err, transaction)
@@ -158,14 +222,14 @@ func (h *CreateClusterHandlerImpl) Handle(params cluster.PostClusterParams, prin
 			if err != nil {
 				return h.err500(err, nil)
 			}
-			//we need to restart haproxy
+			// we need to restart haproxy
 			err = h.ReloadAgent.Restart()
 			if err != nil {
 				return h.err500(err, nil)
 			}
 		}
 
-		h.Config.BootstrapKey.Store("")
+		h.Config.Cluster.BootstrapKey.Store("")
 		h.Config.Mode.Store(params.Data.Mode)
 		h.Config.Status.Store("active")
 		h.Config.Cluster.Clear()
@@ -178,22 +242,17 @@ func (h *CreateClusterHandlerImpl) Handle(params cluster.PostClusterParams, prin
 		return h.err500(err, nil)
 	}
 	result := models.ClusterSettings{
-		BootstrapKey: h.Config.BootstrapKey.Load(),
+		BootstrapKey: h.Config.Cluster.BootstrapKey.Load(),
 		Mode:         h.Config.Mode.Load(),
 		Status:       h.Config.Status.Load(),
 	}
 	return cluster.NewPostClusterOK().WithPayload(&result)
 }
 
-//Handle executing the request and returning a response
+// Handle executing the request and returning a response
 func (h *GetClusterHandlerImpl) Handle(params discovery.GetClusterParams, principal interface{}) middleware.Responder {
-
 	portStr := h.Config.Cluster.Port.Load()
-	p, err := strconv.Atoi(portStr)
-	if err != nil {
-		p = 0
-	}
-	port := int64(p)
+	port := int64(portStr)
 	var clusterSettings *models.ClusterSettingsCluster
 	if h.Config.Mode.Load() == "cluster" {
 		clusterSettings = &models.ClusterSettingsCluster{
@@ -205,7 +264,7 @@ func (h *GetClusterHandlerImpl) Handle(params discovery.GetClusterParams, princi
 		}
 	}
 	settings := &models.ClusterSettings{
-		BootstrapKey: h.Config.BootstrapKey.Load(),
+		BootstrapKey: h.Config.Cluster.BootstrapKey.Load(),
 		Cluster:      clusterSettings,
 		Mode:         h.Config.Mode.Load(),
 		Status:       h.Config.Status.Load(),

@@ -16,23 +16,23 @@
 package configuration
 
 import (
-	log "github.com/sirupsen/logrus"
-
 	"os"
 	"os/signal"
 	"sync"
 	"syscall"
 	"time"
+
+	log "github.com/sirupsen/logrus"
 )
 
 type ChanNotify struct {
-	mu         sync.RWMutex
-	subsribers map[string]chan struct{}
+	mu          sync.RWMutex
+	subscribers map[string]chan struct{}
 }
 
 func NewChanNotify() *ChanNotify {
 	cn := &ChanNotify{}
-	cn.subsribers = make(map[string]chan struct{})
+	cn.subscribers = make(map[string]chan struct{})
 	return cn
 }
 
@@ -41,14 +41,14 @@ func (cn *ChanNotify) Subscribe(name string) chan struct{} {
 	defer cn.mu.Unlock()
 
 	c := make(chan struct{}, 1)
-	cn.subsribers[name] = c
+	cn.subscribers[name] = c
 	return c
 }
 
 func (cn *ChanNotify) UnSubscribeAll() {
 	cn.mu.Lock()
 	defer cn.mu.Unlock()
-	cn.subsribers = make(map[string]chan struct{})
+	cn.subscribers = make(map[string]chan struct{})
 }
 
 func (cn *ChanNotify) Notify() {
@@ -66,7 +66,7 @@ func (cn *ChanNotify) notify(numTry int) {
 	cn.mu.RLock()
 	defer cn.mu.RUnlock()
 
-	if len(cn.subsribers) == 0 {
+	if len(cn.subscribers) == 0 {
 		go func() {
 			time.Sleep(2 * time.Second)
 			numTry--
@@ -75,7 +75,7 @@ func (cn *ChanNotify) notify(numTry int) {
 		return
 	}
 
-	for _, c := range cn.subsribers {
+	for _, c := range cn.subscribers {
 		c <- struct{}{}
 	}
 }
@@ -91,10 +91,12 @@ func (c *Configuration) initSignalHandler() {
 	}()
 
 	osSignals2 := make(chan os.Signal, 1)
-	signal.Notify(osSignals2, syscall.SIGUSR1)
+	signal.Notify(osSignals2, syscall.SIGHUP)
 
 	go func() {
-		<-osSignals2
-		c.Notify.Reload.Notify()
+		for {
+			<-osSignals2
+			c.Notify.Reload.Notify()
+		}
 	}()
 }

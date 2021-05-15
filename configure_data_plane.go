@@ -18,12 +18,11 @@
 package dataplaneapi
 
 import (
+	"context"
 	"crypto/tls"
 	"encoding/json"
 	"fmt"
-	"hash/fnv"
 	"io/ioutil"
-	"math/rand"
 	"net/http"
 	"os"
 	"os/signal"
@@ -31,52 +30,53 @@ import (
 	"runtime/debug"
 	"strconv"
 	"strings"
+	"sync"
 	"syscall"
-	"time"
 
 	"github.com/getkin/kin-openapi/openapi2"
 	"github.com/getkin/kin-openapi/openapi2conv"
-	"github.com/haproxytech/config-parser/v2/types"
-	"github.com/haproxytech/dataplaneapi/adapters"
-	"github.com/haproxytech/dataplaneapi/operations/specification"
-	"github.com/haproxytech/dataplaneapi/operations/specification_openapiv3"
-	"github.com/haproxytech/models/v2"
-
+	"github.com/go-openapi/errors"
+	"github.com/go-openapi/runtime"
+	"github.com/go-openapi/runtime/middleware"
+	"github.com/go-openapi/swag"
+	client_native "github.com/haproxytech/client-native/v2"
+	"github.com/haproxytech/client-native/v2/configuration"
+	"github.com/haproxytech/client-native/v2/models"
+	runtime_api "github.com/haproxytech/client-native/v2/runtime"
+	"github.com/haproxytech/client-native/v2/spoe"
+	"github.com/haproxytech/client-native/v2/storage"
+	parser "github.com/haproxytech/config-parser/v3"
+	"github.com/haproxytech/config-parser/v3/types"
+	"github.com/haproxytech/dataplaneapi/syslog"
+	"github.com/rs/cors"
 	log "github.com/sirupsen/logrus"
 
-	"github.com/haproxytech/dataplaneapi/misc"
-
-	"github.com/go-openapi/runtime/middleware"
-	"github.com/haproxytech/dataplaneapi/operations/discovery"
-
-	client_native "github.com/haproxytech/client-native/v2"
-
-	"github.com/haproxytech/client-native/v2/configuration"
-	runtime_api "github.com/haproxytech/client-native/v2/runtime"
+	"github.com/haproxytech/dataplaneapi/adapters"
 	dataplaneapi_config "github.com/haproxytech/dataplaneapi/configuration"
+	service_discovery "github.com/haproxytech/dataplaneapi/discovery"
 	"github.com/haproxytech/dataplaneapi/handlers"
 	"github.com/haproxytech/dataplaneapi/haproxy"
-
-	errors "github.com/go-openapi/errors"
-	runtime "github.com/go-openapi/runtime"
-	swag "github.com/go-openapi/swag"
-	"github.com/rs/cors"
-
+	"github.com/haproxytech/dataplaneapi/misc"
 	"github.com/haproxytech/dataplaneapi/operations"
+	"github.com/haproxytech/dataplaneapi/operations/discovery"
+	"github.com/haproxytech/dataplaneapi/operations/specification"
+	"github.com/haproxytech/dataplaneapi/operations/specification_openapiv3"
+	"github.com/haproxytech/dataplaneapi/rate"
 
-	"github.com/GehirnInc/crypt"
 	// import various crypting algorithms
 	_ "github.com/GehirnInc/crypt/md5_crypt"
 	_ "github.com/GehirnInc/crypt/sha256_crypt"
 	_ "github.com/GehirnInc/crypt/sha512_crypt"
 )
 
-//go:generate swagger generate server --target ../../../../../../github.com/haproxytech --name controller --spec ../../../../../../../../haproxy-api/haproxy-open-api-spec/build/haproxy_spec.yaml --server-package controller --tags Stats --tags Information --tags Configuration --tags Discovery --tags Frontend --tags Backend --tags Bind --tags Server --tags TCPRequestRule --tags HTTPRequestRule --tags HTTPResponseRule --tags Acl --tags BackendSwitchingRule --tags ServerSwitchingRule --tags TCPResponseRule --skip-models --exclude-main
+// go:generate swagger generate server --target ../../../../../../github.com/haproxytech --name controller --spec ../../../../../../../../haproxy-api/haproxy-open-api-spec/build/haproxy_spec.yaml --server-package controller --tags Stats --tags Information --tags Configuration --tags Discovery --tags Frontend --tags Backend --tags Bind --tags Server --tags TCPRequestRule --tags HTTPRequestRule --tags HTTPResponseRule --tags Acl --tags BackendSwitchingRule --tags ServerSwitchingRule --tags TCPResponseRule --skip-models --exclude-main
 
-var Version string
-var BuildTime string
-var mWorker bool = false
-var logFile *os.File
+var (
+	Version   string
+	BuildTime string
+	mWorker   = false
+	logFile   *os.File
+)
 
 func configureFlags(api *operations.DataPlaneAPI) {
 	cfg := dataplaneapi_config.Get()
@@ -93,16 +93,16 @@ func configureFlags(api *operations.DataPlaneAPI) {
 		Options:          &cfg.Logging,
 	}
 
-	apiOptionsGroup := swag.CommandLineOptionsGroup{
-		ShortDescription: "API options",
-		LongDescription:  "Options for API usage for consumers and various integrations",
-		Options:          &cfg.APIOptions,
+	syslogOptionsGroup := swag.CommandLineOptionsGroup{
+		ShortDescription: "Syslog options",
+		LongDescription:  "Options for configuring syslog logging.",
+		Options:          &cfg.Syslog,
 	}
 
 	api.CommandLineOptionsGroups = make([]swag.CommandLineOptionsGroup, 0, 1)
 	api.CommandLineOptionsGroups = append(api.CommandLineOptionsGroups, haproxyOptionsGroup)
 	api.CommandLineOptionsGroups = append(api.CommandLineOptionsGroups, loggingOptionsGroup)
-	api.CommandLineOptionsGroups = append(api.CommandLineOptionsGroups, apiOptionsGroup)
+	api.CommandLineOptionsGroups = append(api.CommandLineOptionsGroups, syslogOptionsGroup)
 }
 
 func configureAPI(api *operations.DataPlaneAPI) http.Handler {
@@ -117,20 +117,45 @@ func configureAPI(api *operations.DataPlaneAPI) http.Handler {
 			haproxyOptions.MasterRuntime = strings.Replace(masterRuntime, "unix@", "", 1)
 		}
 	}
-	cfgFiles := os.Getenv("HAPROXY_CFGFILES")
-	if cfgFiles != "" {
-		cfg := strings.Split(cfgFiles, ";")
-		haproxyOptions.ConfigFile = cfg[0]
+	// Override options with env variables
+	if os.Getenv("HAPROXY_MWORKER") == "1" {
+		mWorker = true
+		masterRuntime := os.Getenv("HAPROXY_MASTER_CLI")
+		if misc.IsUnixSocketAddr(masterRuntime) {
+			haproxyOptions.MasterRuntime = strings.Replace(masterRuntime, "unix@", "", 1)
+		}
+	}
+
+	if cfgFiles := os.Getenv("HAPROXY_CFGFILES"); cfgFiles != "" {
+		m := map[string]bool{"configuration": false}
+		if len(haproxyOptions.UserListFile) > 0 {
+			m["userlist"] = false
+		}
+
+		for _, f := range strings.Split(cfgFiles, ";") {
+			var conf bool
+			var user bool
+
+			if f == haproxyOptions.ConfigFile {
+				conf = true
+				m["configuration"] = true
+			}
+			if len(haproxyOptions.UserListFile) > 0 && f == haproxyOptions.UserListFile {
+				user = true
+				m["userlist"] = true
+			}
+			if !conf && !user {
+				log.Warningf("The configuration file %s in HAPROXY_CFGFILES is not defined, neither by --config-file or --userlist-file flags.", f)
+			}
+		}
+		for f, ok := range m {
+			if !ok {
+				log.Fatalf("The %s file is not declared in the HAPROXY_CFGFILES environment variable, cannot start.", f)
+			}
+		}
 	}
 	// end overriding options with env variables
 
-	configureLogging(cfg.Logging)
-
-	defer func() {
-		if err := recover(); err != nil {
-			log.Fatalf("Error starting Data Plane API: %s\n Stacktrace from panic: \n%s", err, string(debug.Stack()))
-		}
-	}()
 	// configure the api here
 	api.ServeError = errors.ServeError
 
@@ -148,39 +173,49 @@ func configureAPI(api *operations.DataPlaneAPI) http.Handler {
 
 	api.ServerShutdown = serverShutdown
 
-	client := configureNativeClient(haproxyOptions, mWorker)
+	ctx := ContextHandler.Context()
+	clientCtx, cancel := context.WithCancel(ctx)
+
+	client := configureNativeClient(clientCtx, haproxyOptions, mWorker)
 
 	users := dataplaneapi_config.GetUsersStore()
 
 	// Handle reload signals
 	sigs := make(chan os.Signal, 1)
 	signal.Notify(sigs, syscall.SIGUSR1, syscall.SIGUSR2)
-	go handleSignals(sigs, client, haproxyOptions, users)
+	go handleSignals(ctx, cancel, sigs, client, haproxyOptions, users)
+
+	if !haproxyOptions.DisableInotify {
+		if err := startWatcher(ctx, client, haproxyOptions, users); err != nil {
+			haproxyOptions.DisableInotify = true
+			client = configureNativeClient(clientCtx, haproxyOptions, mWorker)
+		}
+	}
 
 	// Sync map physical file with runtime map entries
 	if haproxyOptions.UpdateMapFiles {
-		go syncMaps(client)
+		go cfg.MapSync.SyncAll(client)
 	}
 
 	// Initialize reload agent
-	ra := &haproxy.ReloadAgent{}
-	if err := ra.Init(haproxyOptions.ReloadDelay, haproxyOptions.ReloadCmd, haproxyOptions.RestartCmd, haproxyOptions.ConfigFile, haproxyOptions.ReloadRetention); err != nil {
-		log.Fatalf("Cannot initialize reload agent: %v", err)
+	raParams := haproxy.ReloadAgentParams{
+		Delay:      haproxyOptions.ReloadDelay,
+		ReloadCmd:  haproxyOptions.ReloadCmd,
+		RestartCmd: haproxyOptions.RestartCmd,
+		ConfigFile: haproxyOptions.ConfigFile,
+		BackupDir:  haproxyOptions.BackupsDir,
+		Retention:  haproxyOptions.ReloadRetention,
+		Ctx:        ctx,
 	}
 
-	// Applies when the Authorization header is set with the Basic scheme
-	api.BasicAuthAuth = authenticateUser
+	ra, e := haproxy.NewReloadAgent(raParams)
+	if e != nil {
+		log.Fatalf("Cannot initialize reload agent: %v", e)
+	}
+
 	// setup discovery handlers
 	api.DiscoveryGetAPIEndpointsHandler = discovery.GetAPIEndpointsHandlerFunc(func(params discovery.GetAPIEndpointsParams, principal interface{}) middleware.Responder {
-		uriSlice := strings.SplitN(params.HTTPRequest.RequestURI[1:], "/", 2)
-		rURI := ""
-		if len(uriSlice) < 2 {
-			rURI = "/"
-		} else {
-			rURI = "/" + uriSlice[1]
-		}
-
-		ends, err := misc.DiscoverChildPaths(rURI, SwaggerJSON)
+		ends, err := misc.DiscoverChildPaths("", SwaggerJSON)
 		if err != nil {
 			e := misc.HandleError(err)
 			return discovery.NewGetAPIEndpointsDefault(int(*e.Code)).WithPayload(e)
@@ -232,13 +267,54 @@ func configureAPI(api *operations.DataPlaneAPI) http.Handler {
 		}
 		return discovery.NewGetStatsEndpointsOK().WithPayload(ends)
 	})
+	api.DiscoveryGetSpoeEndpointsHandler = discovery.GetSpoeEndpointsHandlerFunc(func(params discovery.GetSpoeEndpointsParams, principal interface{}) middleware.Responder {
+		rURI := "/" + strings.SplitN(params.HTTPRequest.RequestURI[1:], "/", 2)[1]
+		ends, err := misc.DiscoverChildPaths(rURI, SwaggerJSON)
+		if err != nil {
+			e := misc.HandleError(err)
+			return discovery.NewGetSpoeEndpointsDefault(int(*e.Code)).WithPayload(e)
+		}
+		return discovery.NewGetSpoeEndpointsOK().WithPayload(ends)
+	})
+	api.DiscoveryGetStorageEndpointsHandler = discovery.GetStorageEndpointsHandlerFunc(func(params discovery.GetStorageEndpointsParams, principal interface{}) middleware.Responder {
+		rURI := "/" + strings.SplitN(params.HTTPRequest.RequestURI[1:], "/", 2)[1]
+		ends, err := misc.DiscoverChildPaths(rURI, SwaggerJSON)
+		if err != nil {
+			e := misc.HandleError(err)
+			return discovery.NewGetStorageEndpointsDefault(int(*e.Code)).WithPayload(e)
+		}
+		return discovery.NewGetStorageEndpointsOK().WithPayload(ends)
+	})
 
 	// setup transaction handlers
 	api.TransactionsStartTransactionHandler = &handlers.StartTransactionHandlerImpl{Client: client}
 	api.TransactionsDeleteTransactionHandler = &handlers.DeleteTransactionHandlerImpl{Client: client}
 	api.TransactionsGetTransactionHandler = &handlers.GetTransactionHandlerImpl{Client: client}
 	api.TransactionsGetTransactionsHandler = &handlers.GetTransactionsHandlerImpl{Client: client}
-	api.TransactionsCommitTransactionHandler = &handlers.CommitTransactionHandlerImpl{Client: client, ReloadAgent: ra}
+	api.TransactionsCommitTransactionHandler = &handlers.CommitTransactionHandlerImpl{Client: client, ReloadAgent: ra, Mutex: &sync.Mutex{}}
+	if cfg.HAProxy.MaxOpenTransactions > 0 {
+		// creating the threshold limit using the CLI flag as hard quota and current open transactions as starting point
+		actualCount := func() uint64 {
+			ts, err := client.Configuration.GetTransactions(models.TransactionStatusInProgress)
+			if err != nil {
+				log.Errorf("Cannot retrieve current open transactions for rate limit, default to zero (%s)", err.Error())
+				return 0
+			}
+			return uint64(len(*ts))
+		}
+		transactionLimiter := rate.NewThresholdLimit(uint64(cfg.HAProxy.MaxOpenTransactions), actualCount)
+		api.TransactionsStartTransactionHandler = &handlers.RateLimitedStartTransactionHandlerImpl{
+			TransactionCounter: transactionLimiter,
+			Handler:            api.TransactionsStartTransactionHandler,
+		}
+	}
+
+	// setup transaction handlers
+	api.SpoeTransactionsStartSpoeTransactionHandler = &handlers.SpoeTransactionsStartSpoeTransactionHandlerImpl{Client: client}
+	api.SpoeTransactionsDeleteSpoeTransactionHandler = &handlers.SpoeTransactionsDeleteSpoeTransactionHandlerImpl{Client: client}
+	api.SpoeTransactionsGetSpoeTransactionHandler = &handlers.SpoeTransactionsGetSpoeTransactionHandlerImpl{Client: client}
+	api.SpoeTransactionsGetSpoeTransactionsHandler = &handlers.SpoeTransactionsGetSpoeTransactionsHandlerImpl{Client: client}
+	api.SpoeTransactionsCommitSpoeTransactionHandler = &handlers.SpoeTransactionsCommitSpoeTransactionHandlerImpl{Client: client, ReloadAgent: ra}
 
 	// setup sites handlers
 	api.SitesCreateSiteHandler = &handlers.CreateSiteHandlerImpl{Client: client, ReloadAgent: ra}
@@ -404,8 +480,15 @@ func configureAPI(api *operations.DataPlaneAPI) http.Handler {
 	api.StickTableGetStickTableHandler = &handlers.GetStickTableHandlerImpl{Client: client}
 	api.StickTableGetStickTableEntriesHandler = &handlers.GetStickTableEntriesHandlerImpl{Client: client}
 
+	// setup ACL runtime handlers
+	api.ACLRuntimeGetServicesHaproxyRuntimeAclsHandler = &handlers.GetACLSHandlerRuntimeImpl{Client: client}
+	api.ACLRuntimeGetServicesHaproxyRuntimeAclsIDHandler = &handlers.GetACLHandlerRuntimeImpl{Client: client}
+	api.ACLRuntimeGetServicesHaproxyRuntimeACLFileEntriesHandler = &handlers.GetACLFileEntriesHandlerRuntimeImpl{Client: client}
+	api.ACLRuntimePostServicesHaproxyRuntimeACLFileEntriesHandler = &handlers.PostACLFileEntryHandlerRuntimeImpl{Client: client}
+	api.ACLRuntimeGetServicesHaproxyRuntimeACLFileEntriesIDHandler = &handlers.GetACLFileEntryRuntimeImpl{Client: client}
+	api.ACLRuntimeDeleteServicesHaproxyRuntimeACLFileEntriesIDHandler = &handlers.DeleteACLFileEntryHandlerRuntimeImpl{Client: client}
+
 	// setup map handlers
-	api.MapsCreateRuntimeMapHandler = &handlers.MapsCreateRuntimeMapHandlerImpl{Client: client}
 	api.MapsGetAllRuntimeMapFilesHandler = &handlers.GetMapsHandlerImpl{Client: client}
 	api.MapsGetOneRuntimeMapHandler = &handlers.GetMapHandlerImpl{Client: client}
 	api.MapsClearRuntimeMapHandler = &handlers.ClearMapHandlerImpl{Client: client}
@@ -423,7 +506,7 @@ func configureAPI(api *operations.DataPlaneAPI) http.Handler {
 	api.ClusterPostClusterHandler = &handlers.CreateClusterHandlerImpl{Client: client, Config: cfg, ReloadAgent: ra}
 	api.ClusterInitiateCertificateRefreshHandler = &handlers.ClusterInitiateCertificateRefreshHandlerImpl{Config: cfg}
 
-	clusterSync := dataplaneapi_config.ClusterSync{ReloadAgent: ra}
+	clusterSync := dataplaneapi_config.ClusterSync{ReloadAgent: ra, Context: ctx}
 	go clusterSync.Monitor(cfg, client)
 
 	// setup specification handler
@@ -435,6 +518,73 @@ func configureAPI(api *operations.DataPlaneAPI) http.Handler {
 		}
 		return specification.NewGetSpecificationOK().WithPayload(&m)
 	})
+
+	// set up service discovery handlers
+	discovery := service_discovery.NewServiceDiscoveries(service_discovery.ServiceDiscoveriesParams{
+		Client:      client.Configuration,
+		ReloadAgent: ra,
+		Context:     ctx,
+	})
+	api.ServiceDiscoveryCreateConsulHandler = &handlers.CreateConsulHandlerImpl{Discovery: discovery, PersistCallback: cfg.SaveConsuls}
+	api.ServiceDiscoveryDeleteConsulHandler = &handlers.DeleteConsulHandlerImpl{Discovery: discovery, PersistCallback: cfg.SaveConsuls}
+	api.ServiceDiscoveryGetConsulHandler = &handlers.GetConsulHandlerImpl{Discovery: discovery}
+	api.ServiceDiscoveryGetConsulsHandler = &handlers.GetConsulsHandlerImpl{Discovery: discovery}
+	api.ServiceDiscoveryReplaceConsulHandler = &handlers.ReplaceConsulHandlerImpl{Discovery: discovery, PersistCallback: cfg.SaveConsuls}
+
+	api.ServiceDiscoveryCreateAWSRegionHandler = &handlers.CreateAWSHandlerImpl{Discovery: discovery, PersistCallback: cfg.SaveAWS}
+	api.ServiceDiscoveryGetAWSRegionHandler = &handlers.GetAWSRegionHandlerImpl{Discovery: discovery}
+	api.ServiceDiscoveryGetAWSRegionsHandler = &handlers.GetAWSRegionsHandlerImpl{Discovery: discovery}
+	api.ServiceDiscoveryReplaceAWSRegionHandler = &handlers.ReplaceAWSRegionHandlerImpl{Discovery: discovery, PersistCallback: cfg.SaveAWS}
+	api.ServiceDiscoveryDeleteAWSRegionHandler = &handlers.DeleteAWSRegionHandlerImpl{Discovery: discovery, PersistCallback: cfg.SaveAWS}
+
+	// create stored consul instances
+	for _, data := range cfg.ServiceDiscovery.Consuls {
+		var err error
+
+		if data.ID == nil || len(*data.ID) == 0 {
+			data.ID = service_discovery.NewServiceDiscoveryUUID()
+		}
+		if err = service_discovery.ValidateConsulData(data, true); err != nil {
+			log.Fatalf("Error validating Consul instance: " + err.Error())
+		}
+		if err = discovery.AddNode("consul", *data.ID, data); err != nil {
+			log.Warning("Error creating consul instance: " + err.Error())
+		}
+	}
+	_ = cfg.SaveConsuls(cfg.ServiceDiscovery.Consuls)
+
+	// create stored AWS instances
+	for _, data := range cfg.ServiceDiscovery.AWSRegions {
+		var err error
+
+		if data.ID == nil || len(*data.ID) == 0 {
+			data.ID = service_discovery.NewServiceDiscoveryUUID()
+		}
+		if err = service_discovery.ValidateAWSData(data, true); err != nil {
+			log.Fatalf("Error validating AWS instance: " + err.Error())
+		}
+		if err = discovery.AddNode("aws", *data.ID, data); err != nil {
+			log.Warning("Error creating AWS instance: " + err.Error())
+		}
+	}
+	_ = cfg.SaveAWS(cfg.ServiceDiscovery.AWSRegions)
+
+	api.ConfigurationGetConfigurationVersionHandler = &handlers.ConfigurationGetConfigurationVersionHandlerImpl{Client: client}
+
+	// map file storage handlers
+
+	api.StorageCreateStorageMapFileHandler = &handlers.StorageCreateStorageMapFileHandlerImpl{Client: client}
+	api.StorageGetAllStorageMapFilesHandler = &handlers.GetAllStorageMapFilesHandlerImpl{Client: client}
+	api.StorageGetOneStorageMapHandler = &handlers.GetOneStorageMapHandlerImpl{Client: client}
+	api.StorageDeleteStorageMapHandler = &handlers.StorageDeleteStorageMapHandlerImpl{Client: client}
+	api.StorageReplaceStorageMapFileHandler = &handlers.StorageReplaceStorageMapFileHandlerImpl{Client: client, ReloadAgent: ra}
+
+	// SSL certs file storage handlers
+	api.StorageGetAllStorageSSLCertificatesHandler = &handlers.StorageGetAllStorageSSLCertificatesHandlerImpl{Client: client}
+	api.StorageGetOneStorageSSLCertificateHandler = &handlers.StorageGetOneStorageSSLCertificateHandlerImpl{Client: client}
+	api.StorageDeleteStorageSSLCertificateHandler = &handlers.StorageDeleteStorageSSLCertificateHandlerImpl{Client: client, ReloadAgent: ra}
+	api.StorageReplaceStorageSSLCertificateHandler = &handlers.StorageReplaceStorageSSLCertificateHandlerImpl{Client: client, ReloadAgent: ra}
+	api.StorageCreateStorageSSLCertificateHandler = &handlers.StorageCreateStorageSSLCertificateHandlerImpl{Client: client, ReloadAgent: ra}
 
 	// setup OpenAPI v3 specification handler
 	api.SpecificationOpenapiv3GetOpenapiv3SpecificationHandler = specification_openapiv3.GetOpenapiv3SpecificationHandlerFunc(func(params specification_openapiv3.GetOpenapiv3SpecificationParams, principal interface{}) middleware.Responder {
@@ -448,8 +598,8 @@ func configureAPI(api *operations.DataPlaneAPI) http.Handler {
 		// if host is empty(dynamic hosts), server prop is empty,
 		// so we need to set it explicitly
 		if v2.Host == "" {
-			cfg := dataplaneapi_config.Get()
-			v2.Host = cfg.Server.Host
+			cfg = dataplaneapi_config.Get()
+			v2.Host = cfg.RuntimeData.Host
 		}
 
 		v3, err := openapi2conv.ToV3Swagger(&v2)
@@ -460,7 +610,94 @@ func configureAPI(api *operations.DataPlaneAPI) http.Handler {
 		return specification_openapiv3.NewGetOpenapiv3SpecificationOK().WithPayload(v3)
 	})
 
-	return setupGlobalMiddleware(api.Serve(setupMiddlewares))
+	// TODO: do we need a ReloadAgent for SPOE
+	// setup SPOE handlers
+	api.SpoeCreateSpoeHandler = &handlers.SpoeCreateSpoeHandlerImpl{Client: client}
+	api.SpoeDeleteSpoeFileHandler = &handlers.SpoeDeleteSpoeFileHandlerImpl{Client: client}
+	api.SpoeGetAllSpoeFilesHandler = &handlers.SpoeGetAllSpoeFilesHandlerImpl{Client: client}
+	api.SpoeGetOneSpoeFileHandler = &handlers.SpoeGetOneSpoeFileHandlerImpl{Client: client}
+
+	// SPOE scope
+	api.SpoeGetSpoeScopesHandler = &handlers.SpoeGetSpoeScopesHandlerImpl{Client: client}
+	api.SpoeGetSpoeScopeHandler = &handlers.SpoeGetSpoeScopeHandlerImpl{Client: client}
+	api.SpoeCreateSpoeScopeHandler = &handlers.SpoeCreateSpoeScopeHandlerImpl{Client: client}
+	api.SpoeDeleteSpoeScopeHandler = &handlers.SpoeDeleteSpoeScopeHandlerImpl{Client: client}
+
+	// SPOE agent
+	api.SpoeGetSpoeAgentsHandler = &handlers.SpoeGetSpoeAgentsHandlerImpl{Client: client}
+	api.SpoeGetSpoeAgentHandler = &handlers.SpoeGetSpoeAgentHandlerImpl{Client: client}
+	api.SpoeCreateSpoeAgentHandler = &handlers.SpoeCreateSpoeAgentHandlerImpl{Client: client}
+	api.SpoeDeleteSpoeAgentHandler = &handlers.SpoeDeleteSpoeAgentHandlerImpl{Client: client}
+	api.SpoeReplaceSpoeAgentHandler = &handlers.SpoeReplaceSpoeAgentHandlerImpl{Client: client}
+
+	// SPOE messages
+	api.SpoeGetSpoeMessagesHandler = &handlers.SpoeGetSpoeMessagesHandlerImpl{Client: client}
+	api.SpoeGetSpoeMessageHandler = &handlers.SpoeGetSpoeMessageHandlerImpl{Client: client}
+	api.SpoeCreateSpoeMessageHandler = &handlers.SpoeCreateSpoeMessageHandlerImpl{Client: client}
+	api.SpoeDeleteSpoeMessageHandler = &handlers.SpoeDeleteSpoeMessageHandlerImpl{Client: client}
+	api.SpoeReplaceSpoeMessageHandler = &handlers.SpoeReplaceSpoeMessageHandlerImpl{Client: client}
+
+	// SPOE groups
+	api.SpoeGetSpoeGroupsHandler = &handlers.SpoeGetSpoeGroupsHandlerImpl{Client: client}
+	api.SpoeGetSpoeGroupHandler = &handlers.SpoeGetSpoeGroupHandlerImpl{Client: client}
+	api.SpoeCreateSpoeGroupHandler = &handlers.SpoeCreateSpoeGroupHandlerImpl{Client: client}
+	api.SpoeDeleteSpoeGroupHandler = &handlers.SpoeDeleteSpoeGroupHandlerImpl{Client: client}
+	api.SpoeReplaceSpoeGroupHandler = &handlers.SpoeReplaceSpoeGroupHandlerImpl{Client: client}
+
+	// SPOE version
+	api.SpoeGetSpoeConfigurationVersionHandler = &handlers.SpoeGetSpoeConfigurationVersionHandlerImpl{Client: client}
+
+	defer func() {
+		if err := recover(); err != nil {
+			log.Fatalf("Error starting Data Plane API: %s\n Stacktrace from panic: \n%s", err, string(debug.Stack()))
+		}
+	}()
+
+	al, err := cfg.ApacheLogFormat()
+	if err != nil {
+		println("Cannot setup custom Apache Log Format", err.Error())
+	}
+
+	appLogger := log.StandardLogger()
+	configureLogging(appLogger, cfg.Logging, func(opts dataplaneapi_config.SyslogOptions) dataplaneapi_config.SyslogOptions {
+		opts.SyslogMsgID = "app"
+		return opts
+	}(cfg.Syslog))
+
+	accLogger := log.New()
+	configureLogging(accLogger, cfg.Logging, func(opts dataplaneapi_config.SyslogOptions) dataplaneapi_config.SyslogOptions {
+		opts.SyslogMsgID = "accesslog"
+		return opts
+	}(cfg.Syslog))
+
+	applicationEntry := log.NewEntry(appLogger)
+	accessEntry := log.NewEntry(accLogger)
+
+	// middlewares
+	var adpts []adapters.Adapter
+	adpts = append(adpts,
+		adapters.RecoverMiddleware(applicationEntry),
+		cors.New(cors.Options{
+			AllowedOrigins: []string{"*"},
+			AllowedMethods: []string{
+				http.MethodHead,
+				http.MethodGet,
+				http.MethodPost,
+				http.MethodPut,
+				http.MethodPatch,
+				http.MethodDelete,
+			},
+			AllowedHeaders:   []string{"*"},
+			ExposedHeaders:   []string{"Reload-ID", "Configuration-Version"},
+			AllowCredentials: true,
+			MaxAge:           86400,
+		}).Handler,
+		adapters.UniqueIDMiddleware(applicationEntry),
+		adapters.LoggingMiddleware(applicationEntry),
+		adapters.ApacheLogMiddleware(accessEntry, al),
+	)
+
+	return setupGlobalMiddleware(api.Serve(setupMiddlewares), adpts...)
 }
 
 // The TLS configuration before HTTPS server starts.
@@ -483,92 +720,32 @@ func setupMiddlewares(handler http.Handler) http.Handler {
 
 // The middleware configuration happens before anything, this middleware also applies to serving the swagger.json document.
 // So this is a good place to plug in a panic handling middleware, logging and metrics
-func setupGlobalMiddleware(handler http.Handler) http.Handler {
-	handleCORS := cors.New(cors.Options{
-		AllowedOrigins: []string{"*"},
-		AllowedMethods: []string{
-			http.MethodHead,
-			http.MethodGet,
-			http.MethodPost,
-			http.MethodPut,
-			http.MethodPatch,
-			http.MethodDelete,
-		},
-		AllowedHeaders:   []string{"*"},
-		ExposedHeaders:   []string{"Reload-ID", "Configuration-Version"},
-		AllowCredentials: true,
-		MaxAge:           86400,
-	}).Handler
-	recovery := adapters.RecoverMiddleware(log.StandardLogger())
-	logViaLogrus := adapters.LoggingMiddleware(log.StandardLogger())
-	return (logViaLogrus(handleCORS(recovery(handler))))
+func setupGlobalMiddleware(handler http.Handler, adapters ...adapters.Adapter) http.Handler {
+	for _, adpt := range adapters {
+		handler = adpt(handler)
+	}
+
+	return handler
 }
 
-//extractEnvVar extracts and returns env variable from HAProxy variable
-//provided in "${SOME_VAR}" format
-func extractEnvVar(pass string) string {
-	return strings.TrimLeft(strings.TrimRight(pass, "\"}"), "\"${")
-}
-
-//findUser searches user by its name. If found, returns user, otherwise returns an error.
-func findUser(userName string, users []types.User) (*types.User, error) {
-	for _, u := range users {
-		if u.Name == userName {
-			return &u, nil
-		}
-	}
-	return nil, errors.New(401, "no configured users")
-}
-
-func authenticateUser(user string, pass string) (interface{}, error) {
-	users := dataplaneapi_config.GetUsersStore().GetUsers()
-	if len(users) == 0 {
-		return nil, errors.New(401, "no configured users")
-	}
-
-	u, err := findUser(user, users)
-	if err != nil {
-		return nil, err
-	}
-
-	userPass := u.Password
-	if strings.HasPrefix(u.Password, "\"${") && strings.HasSuffix(u.Password, "}\"") {
-		userPass = os.Getenv(extractEnvVar(userPass))
-		if userPass == "" {
-			return nil, errors.New(401, fmt.Sprintf("%s %s", "can not read password from env variable:", u.Password))
-		}
-	}
-
-	if u.IsInsecure {
-		if pass == userPass {
-			return user, nil
-		}
-		return nil, errors.New(401, fmt.Sprintf("%s %s", "invalid password:", pass))
-	}
-	if checkPassword(pass, userPass) {
-		return user, nil
-	}
-	return nil, errors.New(401, fmt.Sprintf("%s %s", "invalid password:", pass))
-}
-
-func configureLogging(loggingOptions dataplaneapi_config.LoggingOptions) {
+func configureLogging(logger *log.Logger, loggingOptions dataplaneapi_config.LoggingOptions, syslogOptions dataplaneapi_config.SyslogOptions) {
 	switch loggingOptions.LogFormat {
 	case "text":
-		log.SetFormatter(&log.TextFormatter{
+		logger.SetFormatter(&log.TextFormatter{
 			FullTimestamp: true,
 			DisableColors: true,
 		})
 	case "JSON":
-		log.SetFormatter(&log.JSONFormatter{})
+		logger.SetFormatter(&log.JSONFormatter{})
 	}
 
 	switch loggingOptions.LogTo {
 	case "stdout":
-		log.SetOutput(os.Stdout)
+		logger.SetOutput(os.Stdout)
 	case "file":
 		dir := filepath.Dir(loggingOptions.LogFile)
 		if err := os.MkdirAll(dir, os.ModePerm); err != nil {
-			log.Warning("Error opening log file, no logging implemented: " + err.Error())
+			logger.Warning("Error opening log file, no logging implemented: " + err.Error())
 		}
 		//nolint:govet
 		logFile, err := os.OpenFile(loggingOptions.LogFile, os.O_APPEND|os.O_CREATE|os.O_RDWR, 0666)
@@ -576,40 +753,26 @@ func configureLogging(loggingOptions dataplaneapi_config.LoggingOptions) {
 			log.Warning("Error opening log file, no logging implemented: " + err.Error())
 		}
 		log.SetOutput(logFile)
+	case "syslog":
+		logger.SetOutput(ioutil.Discard)
+		hook, err := syslog.NewRFC5424Hook(syslogOptions)
+		if err != nil {
+			logger.Warningf("Error configuring Syslog logging: %s", err.Error())
+			break
+		}
+		logger.AddHook(hook)
 	}
 
 	switch loggingOptions.LogLevel {
 	case "debug":
-		log.SetLevel(log.DebugLevel)
+		logger.SetLevel(log.DebugLevel)
 	case "info":
-		log.SetLevel(log.InfoLevel)
+		logger.SetLevel(log.InfoLevel)
 	case "warning":
-		log.SetLevel(log.WarnLevel)
+		logger.SetLevel(log.WarnLevel)
 	case "error":
-		log.SetLevel(log.ErrorLevel)
+		logger.SetLevel(log.ErrorLevel)
 	}
-}
-
-func checkPassword(pass, storedPass string) bool {
-	parts := strings.Split(storedPass, "$")
-	if len(parts) == 4 {
-		var c crypt.Crypter
-		switch parts[1] {
-		case "1":
-			c = crypt.MD5.New()
-		case "5":
-			c = crypt.SHA256.New()
-		case "6":
-			c = crypt.SHA512.New()
-		default:
-			return false
-		}
-		if err := c.Verify(storedPass, []byte(pass)); err == nil {
-			return true
-		}
-	}
-
-	return false
 }
 
 func serverShutdown() {
@@ -618,26 +781,55 @@ func serverShutdown() {
 		logFile.Close()
 	}
 	if cfg.HAProxy.UpdateMapFiles {
-		MapQuitChan <- MapQuitNotice{}
+		cfg.MapSync.Stop()
 	}
 }
 
-func configureNativeClient(haproxyOptions dataplaneapi_config.HAProxyConfiguration, mWorker bool) *client_native.HAProxyClient {
+func configureNativeClient(cyx context.Context, haproxyOptions dataplaneapi_config.HAProxyConfiguration, mWorker bool) *client_native.HAProxyClient {
+
 	// Initialize HAProxy native client
 	confClient, err := configureConfigurationClient(haproxyOptions, mWorker)
 	if err != nil {
 		log.Fatalf("Error initializing configuration client: %v", err)
 	}
 
-	runtimeClient := configureRuntimeClient(confClient, haproxyOptions)
+	runtimeClient := configureRuntimeClient(cyx, confClient, haproxyOptions)
 	client := &client_native.HAProxyClient{}
 	if err = client.Init(confClient, runtimeClient); err != nil {
 		log.Fatalf("Error setting up native client: %v", err)
 	}
 
-	if err != nil {
-		log.Fatalf("error initializing configuration user: %v", err)
+	if haproxyOptions.MapsDir != "" {
+		client.MapStorage, err = storage.New(haproxyOptions.MapsDir, storage.MapsType)
+		if err != nil {
+			log.Fatalf("error initializing map storage: %v", err)
+		}
+	} else {
+		log.Fatalf("error trying to use empty string for managed map directory")
 	}
+
+	if haproxyOptions.SSLCertsDir != "" {
+		client.SSLCertStorage, err = storage.New(haproxyOptions.SSLCertsDir, storage.SSLType)
+		if err != nil {
+			log.Fatalf("error initializing SSL certs storage: %v", err)
+		}
+	} else {
+		log.Fatalf("error trying to use empty string for managed map directory")
+	}
+
+	if haproxyOptions.SpoeDir != "" {
+		prms := spoe.Params{
+			SpoeDir:        haproxyOptions.SpoeDir,
+			TransactionDir: haproxyOptions.SpoeTransactionDir,
+		}
+		client.Spoe, err = spoe.NewSpoe(prms)
+		if err != nil {
+			log.Fatalf("error setting up spoe: %v", err)
+		}
+	} else {
+		log.Fatalf("error trying to use empty string for SPOE configuration directory")
+	}
+
 	return client
 }
 
@@ -650,18 +842,46 @@ func configureConfigurationClient(haproxyOptions dataplaneapi_config.HAProxyConf
 		UseValidation:             false,
 		PersistentTransactions:    true,
 		TransactionDir:            haproxyOptions.TransactionDir,
+		ValidateCmd:               haproxyOptions.ValidateCmd,
 		ValidateConfigurationFile: true,
 		MasterWorker:              true,
+		UseMd5Hash:                !haproxyOptions.DisableInotify,
 	}
+
 	err := confClient.Init(confParams)
 	if err != nil {
 		return nil, fmt.Errorf("error setting up configuration client: %s", err.Error())
 	}
 
+	p := confClient.Parser
+	comments, err := p.Get(parser.Comments, parser.CommentsSectionName, "#")
+	insertDisclaimer := false
+	if err != nil {
+		insertDisclaimer = true
+	}
+	data, ok := comments.([]types.Comments)
+	if !ok {
+		insertDisclaimer = true
+	} else if len(data) == 0 || data[0].Value != "Dataplaneapi managed File" {
+		insertDisclaimer = true
+	}
+	if insertDisclaimer {
+		commentsNew := types.Comments{Value: "Dataplaneapi managed File"}
+		err = p.Insert(parser.Comments, parser.CommentsSectionName, "#", commentsNew, 0)
+		if err != nil {
+			return nil, fmt.Errorf("error setting up configuration client: %s", err.Error())
+		}
+		commentsNew = types.Comments{Value: "changing file directly can cause a conflict if dataplaneapi is running"}
+		err = p.Insert(parser.Comments, parser.CommentsSectionName, "#", commentsNew, 1)
+		if err != nil {
+			return nil, fmt.Errorf("error setting up configuration client: %s", err.Error())
+		}
+	}
+
 	return confClient, nil
 }
 
-func configureRuntimeClient(confClient *configuration.Client, haproxyOptions dataplaneapi_config.HAProxyConfiguration) *runtime_api.Client {
+func configureRuntimeClient(ctx context.Context, confClient *configuration.Client, haproxyOptions dataplaneapi_config.HAProxyConfiguration) *runtime_api.Client {
 	runtimeParams := runtime_api.ClientParams{
 		MapsDir: haproxyOptions.MapsDir,
 	}
@@ -678,13 +898,13 @@ func configureRuntimeClient(confClient *configuration.Client, haproxyOptions dat
 			// if nbproc is set, set nbproc sockets
 			if globalConf.Nbproc > 0 {
 				nbproc := int(globalConf.Nbproc)
-				if err = runtimeClient.InitWithMasterSocket(masterSocket, nbproc); err == nil {
+				if err = runtimeClient.InitWithMasterSocketAndContext(ctx, masterSocket, nbproc); err == nil {
 					return runtimeClient
 				}
 				log.Warningf("Error setting up runtime client with master socket: %s : %s", masterSocket, err.Error())
 			} else {
 				// if nbproc is not set, use master socket with 1 process
-				if err = runtimeClient.InitWithMasterSocket(masterSocket, 1); err == nil {
+				if err = runtimeClient.InitWithMasterSocketAndContext(ctx, masterSocket, 1); err == nil {
 					return runtimeClient
 				}
 				log.Warningf("Error setting up runtime client with master socket: %s : %s", masterSocket, err.Error())
@@ -697,7 +917,7 @@ func configureRuntimeClient(confClient *configuration.Client, haproxyOptions dat
 			for _, r := range runtimeAPIs {
 				if misc.IsUnixSocketAddr(*r.Address) {
 					socketList[1] = *r.Address
-					if err = runtimeClient.InitWithSockets(socketList); err == nil {
+					if err = runtimeClient.InitWithSocketsAndContext(ctx, socketList); err == nil {
 						return runtimeClient
 					}
 					log.Warningf("Error setting up runtime client with socket: %s : %s", *r.Address, err.Error())
@@ -724,7 +944,7 @@ func configureRuntimeClient(confClient *configuration.Client, haproxyOptions dat
 			if len(sockets) < int(globalConf.Nbproc) {
 				log.Warning("Runtime API not configured properly, there are more processes then configured sockets")
 			}
-			if err = runtimeClient.InitWithSockets(sockets); err == nil {
+			if err = runtimeClient.InitWithSocketsAndContext(ctx, sockets); err == nil {
 				return runtimeClient
 			}
 			log.Warningf("Error setting up runtime client with sockets: %v : %s", sockets, err.Error())
@@ -741,183 +961,54 @@ func configureRuntimeClient(confClient *configuration.Client, haproxyOptions dat
 	return nil
 }
 
-func handleSignals(sigs chan os.Signal, client *client_native.HAProxyClient, haproxyOptions dataplaneapi_config.HAProxyConfiguration, users *dataplaneapi_config.Users) {
+func handleSignals(ctx context.Context, cancel context.CancelFunc, sigs chan os.Signal, client *client_native.HAProxyClient, haproxyOptions dataplaneapi_config.HAProxyConfiguration, users *dataplaneapi_config.Users) {
 	//nolint:gosimple
 	for {
 		select {
 		case sig := <-sigs:
 			if sig == syscall.SIGUSR1 {
-				client.Runtime = configureRuntimeClient(client.Configuration, haproxyOptions)
+				var clientCtx context.Context
+				cancel()
+				clientCtx, cancel = context.WithCancel(ctx)
+				client.Runtime = configureRuntimeClient(clientCtx, client.Configuration, haproxyOptions)
 				log.Info("Reloaded Data Plane API")
 			} else if sig == syscall.SIGUSR2 {
-				confClient, err := configureConfigurationClient(haproxyOptions, mWorker)
-				if err != nil {
-					log.Fatalf(err.Error())
-				}
-				if err := users.Init(); err != nil {
-					log.Fatalf(err.Error())
-				}
-				log.Info("Rereading Configuration Files")
-				client.Configuration = confClient
+				reloadConfigurationFile(client, haproxyOptions, users)
 			}
-		}
-	}
-}
-
-type MapQuitNotice struct{}
-
-var MapQuitChan = make(chan MapQuitNotice)
-
-//syncMaps sync maps file entries with runtime maps entries for all configured files.
-//Missing runtime entries are appended to the map file
-func syncMaps(client *client_native.HAProxyClient) {
-	cfg := dataplaneapi_config.Get()
-	haproxyOptions := cfg.HAProxy
-
-	d := time.Duration(haproxyOptions.UpdateMapFilesPeriod)
-	ticker := time.NewTicker(d * time.Second)
-
-	for {
-		select {
-		case <-ticker.C:
-			maps, err := client.Runtime.ShowMaps()
-			if err != nil {
-				log.Warning("syncMaps runtime API ShowMaps error: ", err.Error())
-			}
-			for _, mp := range maps {
-				go syncMapFilesToRuntimeEntries(mp, client)
-			}
-		case <-MapQuitChan:
+		case <-ctx.Done():
 			return
 		}
 	}
 }
 
-func syncMapFilesToRuntimeEntries(mp *models.Map, client *client_native.HAProxyClient) {
-	//map file entries
-	raw, err := ioutil.ReadFile(mp.File)
+func reloadConfigurationFile(client *client_native.HAProxyClient, haproxyOptions dataplaneapi_config.HAProxyConfiguration, users *dataplaneapi_config.Users) {
+	confClient, err := configureConfigurationClient(haproxyOptions, mWorker)
 	if err != nil {
-		log.Warningf("error reading map file: %s %s", mp.File, err.Error())
+		log.Fatalf(err.Error())
 	}
-	fileEntries := client.Runtime.ParseMapEntries(string(raw))
-
-	//runtime map entries
-	id := fmt.Sprintf("#%s", mp.ID)
-	runtimeEntries, err := client.Runtime.ShowMapEntries(id)
-	if err != nil {
-		log.Warningf("error runtime API ShowMapEntries: id: %s %s", id, err.Error())
+	if err := users.Init(); err != nil {
+		log.Fatalf(err.Error())
 	}
-
-	if len(runtimeEntries) < 1 {
-		return
-	}
-
-	if len(fileEntries) != len(runtimeEntries) {
-		if dumpRuntimeEntries(mp.File, runtimeEntries) {
-			log.Infof("map file %s synced with runtime entries", mp.File)
-			return
-		}
-	}
-
-	if !equalSomeFileAndRuntimeEntries(fileEntries, runtimeEntries) {
-		if dumpRuntimeEntries(mp.File, runtimeEntries) {
-			log.Infof("map file %s synced with runtime entries", mp.File)
-			return
-		}
-	}
-
-	if !equalHashFileAndRuntimeEntries(fileEntries, runtimeEntries) {
-		if dumpRuntimeEntries(mp.File, runtimeEntries) {
-			log.Infof("map file %s synced with runtime entries", mp.File)
-			return
-		}
-	}
+	log.Info("Rereading Configuration Files")
+	client.Configuration = confClient
 }
 
-//equalSomeFileAndRuntimeEntries compares last few runtime entries with file entries
-//if records differs, check is run against random entries
-func equalSomeFileAndRuntimeEntries(fEntries, rEntries models.MapEntries) bool {
-	if len(fEntries) != len(rEntries) {
-		return false
-	}
-
-	max := 0
-	switch l := len(rEntries); {
-	case l > 19:
-		for i := l - 20; i < l; i++ {
-			if rEntries[i].Key != fEntries[i].Key || rEntries[i].Value != fEntries[i].Value {
-				return false
-			}
-		}
-		max = l - 19
-	default:
-		max = l
-	}
-
-	for i := 0; i < 10; i++ {
-		rand.Seed(time.Now().UTC().UnixNano())
-		r := rand.Intn(max)
-		if rEntries[r].Key != fEntries[r].Key || rEntries[r].Value != fEntries[r].Value {
-			return false
+func startWatcher(ctx context.Context, client *client_native.HAProxyClient, haproxyOptions dataplaneapi_config.HAProxyConfiguration, users *dataplaneapi_config.Users) error {
+	cb := func() {
+		reloadConfigurationFile(client, haproxyOptions, users)
+		if err := client.Configuration.IncrementVersion(); err != nil {
+			log.Warningf("Failed to increment configuration version: %v", err)
 		}
 	}
-	return true
-}
 
-func hash(s string) uint32 {
-	h := fnv.New32a()
-	_, _ = h.Write([]byte(s))
-	return h.Sum32()
-}
-
-//equalHashFileAndRuntimeEntries compares runtime and map entries in form of hash
-//Returns true if hashes are same, otherwise returns false
-func equalHashFileAndRuntimeEntries(fEntries, rEntries models.MapEntries) bool {
-	if len(fEntries) != len(rEntries) {
-		return false
-	}
-
-	var fb strings.Builder
-	for _, fe := range fEntries {
-		fb.WriteString(fe.Key + fe.Value)
-	}
-
-	var rb strings.Builder
-	for _, re := range rEntries {
-		rb.WriteString(re.Key + re.Value)
-	}
-
-	return hash(fb.String()) == hash(rb.String())
-}
-
-//dumpRuntimeEntries dumps runtime entries into map file
-func dumpRuntimeEntries(file string, me models.MapEntries) bool {
-	f, err := os.OpenFile(file, os.O_APPEND|os.O_WRONLY|os.O_TRUNC, 0600)
+	watcher, err := dataplaneapi_config.NewConfigWatcher(dataplaneapi_config.ConfigWatcherParams{
+		FilePath: haproxyOptions.ConfigFile,
+		Callback: cb,
+		Ctx:      ctx,
+	})
 	if err != nil {
-		log.Warningf("error opening map file: %s %s", file, err.Error())
-		return false
+		return err
 	}
-	defer f.Close()
-
-	err = f.Truncate(0)
-	if err != nil {
-		log.Warningf("error truncating map file: %s %s", file, err.Error())
-		return false
-	}
-
-	_, err = f.Seek(0, 0)
-	if err != nil {
-		log.Warningf("error setting file to offset: %s %s", file, err.Error())
-		return false
-	}
-
-	for _, e := range me {
-		line := fmt.Sprintf("%s %s%s", e.Key, e.Value, "\n")
-		_, err = f.WriteString(line)
-		if err != nil {
-			log.Warningf("error writing map file: %s %s", file, err.Error())
-			return false
-		}
-	}
-	return true
+	go watcher.Listen()
+	return nil
 }

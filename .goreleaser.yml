@@ -9,22 +9,20 @@ builds:
     id: my-build
     main: ./cmd/dataplaneapi/main.go
     binary: ./build/dataplaneapi
-    gcflags:
-      - -l
-      - -N
     ldflags:
       - -s -w -X main.GitRepo={{.GitURL}} -X main.GitTag={{.Tag}} -X main.GitCommit={{.ShortCommit}} -X main.GitDirty= -X main.BuildTime={{.Date}}
     env:
       - CGO_ENABLED=0
     goos:
       - linux
-      - darwin
       - freebsd
     goarch:
       - 386
       - amd64
       - arm
       - arm64
+      - ppc64le
+      - s390x
 archives:
   -
     id: my-archive
@@ -41,8 +39,6 @@ checksum:
   name_template: 'checksums.txt'
 snapshot:
   name_template: "{{ .Tag }}-next"
-changelog:
-  sort: asc
 release:
   draft: true
   name_template: "HAProxy {{toupper .ProjectName}} v{{.Version}}"

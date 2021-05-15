@@ -128,6 +128,20 @@ func init() {
             "in": "query"
           },
           {
+            "type": "string",
+            "description": "Force the advertised address when joining a cluster",
+            "name": "advertised_address",
+            "in": "query"
+          },
+          {
+            "maximum": 65535,
+            "minimum": 1,
+            "type": "integer",
+            "description": "Force the advertised port when joining a cluster",
+            "name": "advertised_port",
+            "in": "query"
+          },
+          {
             "$ref": "#/parameters/version"
           }
         ],
@@ -185,6 +199,350 @@ func init() {
             "schema": {
               "$ref": "#/definitions/info"
             }
+          },
+          "default": {
+            "$ref": "#/responses/DefaultError"
+          }
+        }
+      }
+    },
+    "/service_discovery/aws": {
+      "get": {
+        "description": "Return all configured AWS regions.",
+        "tags": [
+          "ServiceDiscovery"
+        ],
+        "summary": "Return an array of all configured AWS regions",
+        "operationId": "getAWSRegions",
+        "responses": {
+          "200": {
+            "description": "Successful operation",
+            "schema": {
+              "type": "object",
+              "required": [
+                "data"
+              ],
+              "properties": {
+                "data": {
+                  "$ref": "#/definitions/awsRegions"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/responses/DefaultError"
+          }
+        }
+      },
+      "post": {
+        "description": "Add a new AWS region.\nCredentials are not required in case Dataplane API is running in an EC2 instance with proper IAM role attached.",
+        "tags": [
+          "ServiceDiscovery"
+        ],
+        "summary": "Add a new AWS region",
+        "operationId": "createAWSRegion",
+        "parameters": [
+          {
+            "name": "data",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/awsRegion"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Resource created",
+            "schema": {
+              "$ref": "#/definitions/awsRegion"
+            }
+          },
+          "400": {
+            "$ref": "#/responses/BadRequest"
+          },
+          "409": {
+            "$ref": "#/responses/AlreadyExists"
+          },
+          "default": {
+            "$ref": "#/responses/DefaultError"
+          }
+        }
+      }
+    },
+    "/service_discovery/aws/{id}": {
+      "get": {
+        "description": "Return one AWS Region configuration by it's id.",
+        "tags": [
+          "ServiceDiscovery"
+        ],
+        "summary": "Return an AWS region",
+        "operationId": "getAWSRegion",
+        "parameters": [
+          {
+            "type": "string",
+            "description": "AWS region id",
+            "name": "id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful operation",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "data": {
+                  "$ref": "#/definitions/awsRegion"
+                }
+              }
+            }
+          },
+          "404": {
+            "$ref": "#/responses/NotFound"
+          },
+          "default": {
+            "$ref": "#/responses/DefaultError"
+          }
+        }
+      },
+      "put": {
+        "description": "Replace an AWS region configuration by its id.",
+        "tags": [
+          "ServiceDiscovery"
+        ],
+        "summary": "Replace an AWS region",
+        "operationId": "replaceAWSRegion",
+        "parameters": [
+          {
+            "type": "string",
+            "description": "AWS Region ID",
+            "name": "id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "name": "data",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/awsRegion"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Resource updated",
+            "schema": {
+              "$ref": "#/definitions/awsRegion"
+            }
+          },
+          "400": {
+            "$ref": "#/responses/BadRequest"
+          },
+          "404": {
+            "$ref": "#/responses/NotFound"
+          },
+          "default": {
+            "$ref": "#/responses/DefaultError"
+          }
+        }
+      },
+      "delete": {
+        "description": "Delete an AWS region configuration by it's id.",
+        "tags": [
+          "ServiceDiscovery"
+        ],
+        "summary": "Delete an AWS region",
+        "operationId": "deleteAWSRegion",
+        "parameters": [
+          {
+            "type": "string",
+            "description": "AWS region ID",
+            "name": "id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Resource deleted"
+          },
+          "404": {
+            "$ref": "#/responses/NotFound"
+          },
+          "default": {
+            "$ref": "#/responses/DefaultError"
+          }
+        }
+      }
+    },
+    "/service_discovery/consul": {
+      "get": {
+        "description": "Returns all configured Consul servers.",
+        "tags": [
+          "ServiceDiscovery"
+        ],
+        "summary": "Return an array of all configured Consul servers",
+        "operationId": "getConsuls",
+        "responses": {
+          "200": {
+            "description": "Successful operation",
+            "schema": {
+              "type": "object",
+              "required": [
+                "data"
+              ],
+              "properties": {
+                "data": {
+                  "$ref": "#/definitions/consuls"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/responses/DefaultError"
+          }
+        }
+      },
+      "post": {
+        "description": "Adds a new Consul server.",
+        "tags": [
+          "ServiceDiscovery"
+        ],
+        "summary": "Add a new Consul server",
+        "operationId": "createConsul",
+        "parameters": [
+          {
+            "name": "data",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/consul"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Consul created",
+            "schema": {
+              "$ref": "#/definitions/consul"
+            }
+          },
+          "400": {
+            "$ref": "#/responses/BadRequest"
+          },
+          "409": {
+            "$ref": "#/responses/AlreadyExists"
+          },
+          "default": {
+            "$ref": "#/responses/DefaultError"
+          }
+        }
+      }
+    },
+    "/service_discovery/consul/{id}": {
+      "get": {
+        "description": "Returns one Consul server configuration by it's id.",
+        "tags": [
+          "ServiceDiscovery"
+        ],
+        "summary": "Return one Consul server",
+        "operationId": "getConsul",
+        "parameters": [
+          {
+            "type": "string",
+            "description": "Consul server id",
+            "name": "id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful operation",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "data": {
+                  "$ref": "#/definitions/consul"
+                }
+              }
+            }
+          },
+          "404": {
+            "$ref": "#/responses/NotFound"
+          },
+          "default": {
+            "$ref": "#/responses/DefaultError"
+          }
+        }
+      },
+      "put": {
+        "description": "Replaces a Consul server configuration by it's id.",
+        "tags": [
+          "ServiceDiscovery"
+        ],
+        "summary": "Replace a Consul server",
+        "operationId": "replaceConsul",
+        "parameters": [
+          {
+            "type": "string",
+            "description": "Consul Index",
+            "name": "id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "name": "data",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/consul"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Consul server replaced",
+            "schema": {
+              "$ref": "#/definitions/consul"
+            }
+          },
+          "400": {
+            "$ref": "#/responses/BadRequest"
+          },
+          "404": {
+            "$ref": "#/responses/NotFound"
+          },
+          "default": {
+            "$ref": "#/responses/DefaultError"
+          }
+        }
+      },
+      "delete": {
+        "description": "Deletes a Consul server configuration by it's id.",
+        "tags": [
+          "ServiceDiscovery"
+        ],
+        "summary": "Delete a Consul server",
+        "operationId": "deleteConsul",
+        "parameters": [
+          {
+            "type": "string",
+            "description": "Consul server Index",
+            "name": "id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Consul server deleted"
+          },
+          "404": {
+            "$ref": "#/responses/NotFound"
           },
           "default": {
             "$ref": "#/responses/DefaultError"
@@ -290,6 +648,12 @@ func init() {
             "name": "parent_type",
             "in": "query",
             "required": true
+          },
+          {
+            "type": "string",
+            "description": "ACL name",
+            "name": "acl_name",
+            "in": "query"
           },
           {
             "$ref": "#/parameters/transaction_id"
@@ -1117,7 +1481,7 @@ func init() {
         }
       },
       "delete": {
-        "description": "Deletes a frontend from the configuration by it's name.",
+        "description": "Deletes a backend from the configuration by it's name.",
         "tags": [
           "Backend"
         ],
@@ -4158,6 +4522,13 @@ func init() {
             "in": "query"
           },
           {
+            "type": "boolean",
+            "default": false,
+            "description": "If set, only validates configuration, without applying it",
+            "name": "only_validate",
+            "in": "query"
+          },
+          {
             "type": "string",
             "description": "List of Runtime API commands with parameters separated by ';'",
             "name": "X-Runtime-Actions",
@@ -5976,6 +6347,35 @@ func init() {
         }
       }
     },
+    "/services/haproxy/configuration/version": {
+      "get": {
+        "description": "Returns configuration version.",
+        "tags": [
+          "Configuration"
+        ],
+        "summary": "Return a configuration version",
+        "operationId": "getConfigurationVersion",
+        "parameters": [
+          {
+            "$ref": "#/parameters/transaction_id"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Configuration version",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          "404": {
+            "$ref": "#/responses/NotFound"
+          },
+          "default": {
+            "$ref": "#/responses/DefaultError"
+          }
+        }
+      }
+    },
     "/services/haproxy/reloads": {
       "get": {
         "description": "Returns a list of HAProxy reloads.",
@@ -6058,6 +6458,231 @@ func init() {
         }
       }
     },
+    "/services/haproxy/runtime/acl_file_entries": {
+      "get": {
+        "description": "Returns an ACL runtime setting using the runtime socket.",
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "ACL Runtime"
+        ],
+        "summary": "Return an ACL entries",
+        "parameters": [
+          {
+            "type": "string",
+            "description": "ACL ID",
+            "name": "acl_id",
+            "in": "query",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful operation",
+            "schema": {
+              "$ref": "#/definitions/acl_files_entries"
+            }
+          },
+          "400": {
+            "$ref": "#/responses/BadRequest"
+          },
+          "404": {
+            "$ref": "#/responses/NotFound"
+          },
+          "default": {
+            "$ref": "#/responses/DefaultError"
+          }
+        }
+      },
+      "post": {
+        "description": "Adds an entry into the ACL file using the runtime socket.",
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "ACL Runtime"
+        ],
+        "summary": "Add entry to an ACL file",
+        "parameters": [
+          {
+            "type": "string",
+            "description": "ACL ID",
+            "name": "acl_id",
+            "in": "query",
+            "required": true
+          },
+          {
+            "name": "data",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/acl_file_entry"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "ACL entry created",
+            "schema": {
+              "$ref": "#/definitions/acl_file_entry"
+            }
+          },
+          "400": {
+            "$ref": "#/responses/BadRequest"
+          },
+          "409": {
+            "$ref": "#/responses/AlreadyExists"
+          },
+          "default": {
+            "$ref": "#/responses/DefaultError"
+          }
+        }
+      }
+    },
+    "/services/haproxy/runtime/acl_file_entries/{id}": {
+      "get": {
+        "description": "Returns the ACL entry by its ID using the runtime socket.",
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "ACL Runtime"
+        ],
+        "summary": "Return an ACL entry",
+        "parameters": [
+          {
+            "type": "string",
+            "description": "ACL ID",
+            "name": "acl_id",
+            "in": "query",
+            "required": true
+          },
+          {
+            "type": "string",
+            "description": "File entry ID",
+            "name": "id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful operation",
+            "schema": {
+              "$ref": "#/definitions/acl_file_entry"
+            }
+          },
+          "400": {
+            "$ref": "#/responses/BadRequest"
+          },
+          "404": {
+            "$ref": "#/responses/NotFound"
+          },
+          "default": {
+            "$ref": "#/responses/DefaultError"
+          }
+        }
+      },
+      "delete": {
+        "description": "Deletes the entry from the ACL by its value using the runtime socket.",
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "ACL Runtime"
+        ],
+        "summary": "Delete an ACL entry",
+        "parameters": [
+          {
+            "type": "string",
+            "description": "ACL ID",
+            "name": "acl_id",
+            "in": "query",
+            "required": true
+          },
+          {
+            "type": "string",
+            "description": "File entry ID",
+            "name": "id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful operation"
+          },
+          "400": {
+            "$ref": "#/responses/BadRequest"
+          },
+          "404": {
+            "$ref": "#/responses/NotFound"
+          },
+          "default": {
+            "$ref": "#/responses/DefaultError"
+          }
+        }
+      }
+    },
+    "/services/haproxy/runtime/acls": {
+      "get": {
+        "description": "Returns all ACL files using the runtime socket.",
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "ACL Runtime"
+        ],
+        "summary": "Return an array of all ACL files",
+        "responses": {
+          "200": {
+            "description": "Successful operation",
+            "schema": {
+              "$ref": "#/definitions/acl_files"
+            }
+          },
+          "default": {
+            "$ref": "#/responses/DefaultError"
+          }
+        }
+      }
+    },
+    "/services/haproxy/runtime/acls/{id}": {
+      "get": {
+        "description": "Returns an ACL file by id using the runtime socket.",
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "ACL Runtime"
+        ],
+        "summary": "Return an ACL file",
+        "parameters": [
+          {
+            "type": "string",
+            "description": "ACL file entry ID",
+            "name": "id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful operation",
+            "schema": {
+              "$ref": "#/definitions/acl_file"
+            }
+          },
+          "404": {
+            "$ref": "#/responses/NotFound"
+          },
+          "default": {
+            "$ref": "#/responses/DefaultError"
+          }
+        }
+      }
+    },
     "/services/haproxy/runtime/info": {
       "get": {
         "description": "Return HAProxy process information",
@@ -6084,12 +6709,21 @@ func init() {
     },
     "/services/haproxy/runtime/maps": {
       "get": {
-        "description": "Returns all available map files.",
+        "description": "Returns runtime map files.",
         "tags": [
           "Maps"
         ],
-        "summary": "Return all available map files",
+        "summary": "Return runtime map files",
         "operationId": "getAllRuntimeMapFiles",
+        "parameters": [
+          {
+            "type": "boolean",
+            "default": false,
+            "description": "If true, also show unmanaged map files loaded in haproxy",
+            "name": "include_unmanaged",
+            "in": "query"
+          }
+        ],
         "responses": {
           "200": {
             "description": "Successful operation",
@@ -6099,43 +6733,6 @@ func init() {
           },
           "404": {
             "$ref": "#/responses/NotFound"
-          },
-          "default": {
-            "$ref": "#/responses/DefaultError"
-          }
-        }
-      },
-      "post": {
-        "description": "Creates runtime map file with its entries.",
-        "consumes": [
-          "multipart/form-data"
-        ],
-        "tags": [
-          "Maps"
-        ],
-        "summary": "Creates runtime map file with its entries",
-        "operationId": "createRuntimeMap",
-        "parameters": [
-          {
-            "type": "file",
-            "x-mimetype": "text/plain",
-            "description": "The map file to upload",
-            "name": "fileUpload",
-            "in": "formData"
-          }
-        ],
-        "responses": {
-          "201": {
-            "description": "Map file created with its entries",
-            "schema": {
-              "$ref": "#/definitions/map_entries"
-            }
-          },
-          "400": {
-            "$ref": "#/responses/BadRequest"
-          },
-          "409": {
-            "$ref": "#/responses/AlreadyExists"
           },
           "default": {
             "$ref": "#/responses/DefaultError"
@@ -6195,6 +6792,13 @@ func init() {
             "description": "If true, deletes file from disk",
             "name": "forceDelete",
             "in": "query"
+          },
+          {
+            "type": "boolean",
+            "default": false,
+            "description": "If true, immediately syncs changes to disk",
+            "name": "force_sync",
+            "in": "query"
           }
         ],
         "responses": {
@@ -6221,7 +6825,7 @@ func init() {
         "parameters": [
           {
             "type": "string",
-            "description": "Map file name",
+            "description": "Mapfile attribute storage_name",
             "name": "map",
             "in": "query",
             "required": true
@@ -6252,10 +6856,17 @@ func init() {
         "parameters": [
           {
             "type": "string",
-            "description": "Map file name",
+            "description": "Mapfile attribute storage_name",
             "name": "map",
             "in": "query",
             "required": true
+          },
+          {
+            "type": "boolean",
+            "default": false,
+            "description": "If true, immediately syncs changes to disk",
+            "name": "force_sync",
+            "in": "query"
           },
           {
             "name": "data",
@@ -6303,7 +6914,7 @@ func init() {
           },
           {
             "type": "string",
-            "description": "Map file name",
+            "description": "Mapfile attribute storage_name",
             "name": "map",
             "in": "query",
             "required": true
@@ -6341,10 +6952,17 @@ func init() {
           },
           {
             "type": "string",
-            "description": "Map file name",
+            "description": "Mapfile attribute storage_name",
             "name": "map",
             "in": "query",
             "required": true
+          },
+          {
+            "type": "boolean",
+            "default": false,
+            "description": "If true, immediately syncs changes to disk",
+            "name": "force_sync",
+            "in": "query"
           },
           {
             "name": "data",
@@ -6399,10 +7017,17 @@ func init() {
           },
           {
             "type": "string",
-            "description": "Map file name",
+            "description": "Mapfile attribute storage_name",
             "name": "map",
             "in": "query",
             "required": true
+          },
+          {
+            "type": "boolean",
+            "default": false,
+            "description": "If true, immediately syncs changes to disk",
+            "name": "force_sync",
+            "in": "query"
           }
         ],
         "responses": {
@@ -6424,7 +7049,7 @@ func init() {
         "tags": [
           "Server"
         ],
-        "summary": "Return an array of runtime servers' setings",
+        "summary": "Return an array of runtime servers' settings",
         "operationId": "getRuntimeServers",
         "parameters": [
           {
@@ -6925,6 +7550,1498 @@ func init() {
         }
       }
     },
+    "/services/haproxy/spoe": {
+      "get": {
+        "description": "Returns a list of endpoints to be used for SPOE settings of HAProxy.",
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "Discovery"
+        ],
+        "summary": "Return list of HAProxy SPOE endpoints",
+        "operationId": "getSpoeEndpoints",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "$ref": "#/definitions/endpoints"
+            }
+          },
+          "default": {
+            "$ref": "#/responses/DefaultError"
+          }
+        }
+      }
+    },
+    "/services/haproxy/spoe/spoe_agents": {
+      "get": {
+        "description": "Returns an array of all configured spoe agents in one scope.",
+        "tags": [
+          "Spoe"
+        ],
+        "summary": "Return an array of spoe agents in one scope",
+        "operationId": "getSpoeAgents",
+        "parameters": [
+          {
+            "type": "string",
+            "description": "Spoe file name",
+            "name": "spoe",
+            "in": "query",
+            "required": true
+          },
+          {
+            "type": "string",
+            "description": "Spoe scope",
+            "name": "scope",
+            "in": "query",
+            "required": true
+          },
+          {
+            "$ref": "#/parameters/transaction_id"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful operation",
+            "schema": {
+              "type": "object",
+              "required": [
+                "data"
+              ],
+              "properties": {
+                "_version": {
+                  "type": "integer"
+                },
+                "data": {
+                  "$ref": "#/definitions/spoe_agents"
+                }
+              }
+            },
+            "headers": {
+              "Configuration-Version": {
+                "type": "integer",
+                "description": "Spoe configuration file version"
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/responses/DefaultError"
+          }
+        }
+      },
+      "post": {
+        "description": "Adds a new spoe agent to the spoe scope.",
+        "tags": [
+          "Spoe"
+        ],
+        "summary": "Add a new spoe agent to scope",
+        "operationId": "createSpoeAgent",
+        "parameters": [
+          {
+            "type": "string",
+            "description": "Spoe file name",
+            "name": "spoe",
+            "in": "query",
+            "required": true
+          },
+          {
+            "type": "string",
+            "description": "Spoe scope",
+            "name": "scope",
+            "in": "query",
+            "required": true
+          },
+          {
+            "name": "data",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/spoe_agent"
+            }
+          },
+          {
+            "$ref": "#/parameters/transaction_id"
+          },
+          {
+            "$ref": "#/parameters/version"
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Spoe agent created",
+            "schema": {
+              "$ref": "#/definitions/spoe_agent"
+            }
+          },
+          "400": {
+            "$ref": "#/responses/BadRequest"
+          },
+          "409": {
+            "$ref": "#/responses/AlreadyExists"
+          },
+          "default": {
+            "$ref": "#/responses/DefaultError"
+          }
+        }
+      }
+    },
+    "/services/haproxy/spoe/spoe_agents/{name}": {
+      "get": {
+        "description": "Returns one spoe agent configuration in one SPOE scope.",
+        "tags": [
+          "Spoe"
+        ],
+        "summary": "Return a spoe agent",
+        "operationId": "getSpoeAgent",
+        "parameters": [
+          {
+            "type": "string",
+            "description": "Spoe file name",
+            "name": "spoe",
+            "in": "query",
+            "required": true
+          },
+          {
+            "type": "string",
+            "description": "Spoe scope",
+            "name": "scope",
+            "in": "query",
+            "required": true
+          },
+          {
+            "type": "string",
+            "description": "Spoe agent name",
+            "name": "name",
+            "in": "path",
+            "required": true
+          },
+          {
+            "$ref": "#/parameters/transaction_id"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful operation",
+            "schema": {
+              "type": "object",
+              "required": [
+                "data"
+              ],
+              "properties": {
+                "_version": {
+                  "type": "integer"
+                },
+                "data": {
+                  "$ref": "#/definitions/spoe_agent"
+                }
+              }
+            },
+            "headers": {
+              "Configuration-Version": {
+                "type": "integer",
+                "description": "Spoe configuration file version"
+              }
+            }
+          },
+          "404": {
+            "$ref": "#/responses/NotFound"
+          },
+          "default": {
+            "$ref": "#/responses/DefaultError"
+          }
+        }
+      },
+      "put": {
+        "description": "Replaces a SPOE agent configuration in one SPOE scope.",
+        "tags": [
+          "Spoe"
+        ],
+        "summary": "Replace a SPOE agent",
+        "operationId": "replaceSpoeAgent",
+        "parameters": [
+          {
+            "type": "string",
+            "description": "Spoe file name",
+            "name": "spoe",
+            "in": "query",
+            "required": true
+          },
+          {
+            "type": "string",
+            "description": "Spoe scope",
+            "name": "scope",
+            "in": "query",
+            "required": true
+          },
+          {
+            "type": "string",
+            "description": "Spoe agent name",
+            "name": "name",
+            "in": "path",
+            "required": true
+          },
+          {
+            "name": "data",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/spoe_agent"
+            }
+          },
+          {
+            "$ref": "#/parameters/transaction_id"
+          },
+          {
+            "$ref": "#/parameters/version"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Spoe agent replaced",
+            "schema": {
+              "$ref": "#/definitions/spoe_agent"
+            }
+          },
+          "400": {
+            "$ref": "#/responses/BadRequest"
+          },
+          "404": {
+            "$ref": "#/responses/NotFound"
+          },
+          "default": {
+            "$ref": "#/responses/DefaultError"
+          }
+        }
+      },
+      "delete": {
+        "description": "Deletes a SPOE agent from the configuration in one SPOE scope.",
+        "tags": [
+          "Spoe"
+        ],
+        "summary": "Delete a SPOE agent",
+        "operationId": "deleteSpoeAgent",
+        "parameters": [
+          {
+            "type": "string",
+            "description": "Spoe file name",
+            "name": "spoe",
+            "in": "query",
+            "required": true
+          },
+          {
+            "type": "string",
+            "description": "Spoe scope",
+            "name": "scope",
+            "in": "query",
+            "required": true
+          },
+          {
+            "type": "string",
+            "description": "Spoe agent name",
+            "name": "name",
+            "in": "path",
+            "required": true
+          },
+          {
+            "$ref": "#/parameters/transaction_id"
+          },
+          {
+            "$ref": "#/parameters/version"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Spoe agent deleted"
+          },
+          "404": {
+            "$ref": "#/responses/NotFound"
+          },
+          "default": {
+            "$ref": "#/responses/DefaultError"
+          }
+        }
+      }
+    },
+    "/services/haproxy/spoe/spoe_files": {
+      "get": {
+        "description": "Returns all available SPOE files.",
+        "tags": [
+          "Spoe"
+        ],
+        "summary": "Return all available SPOE files",
+        "operationId": "getAllSpoeFiles",
+        "responses": {
+          "200": {
+            "description": "Successful operation",
+            "schema": {
+              "$ref": "#/definitions/spoe_files"
+            }
+          },
+          "404": {
+            "$ref": "#/responses/NotFound"
+          },
+          "default": {
+            "$ref": "#/responses/DefaultError"
+          }
+        }
+      },
+      "post": {
+        "description": "Creates SPOE file with its entries.",
+        "consumes": [
+          "multipart/form-data"
+        ],
+        "tags": [
+          "Spoe"
+        ],
+        "summary": "Creates SPOE file with its entries",
+        "operationId": "createSpoe",
+        "parameters": [
+          {
+            "type": "file",
+            "x-mimetype": "text/plain",
+            "description": "The spoe file to upload",
+            "name": "file_upload",
+            "in": "formData"
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "SPOE file created with its entries",
+            "schema": {
+              "type": "string"
+            }
+          },
+          "400": {
+            "$ref": "#/responses/BadRequest"
+          },
+          "409": {
+            "$ref": "#/responses/AlreadyExists"
+          },
+          "default": {
+            "$ref": "#/responses/DefaultError"
+          }
+        }
+      }
+    },
+    "/services/haproxy/spoe/spoe_files/{name}": {
+      "get": {
+        "description": "Returns one SPOE file.",
+        "tags": [
+          "Spoe"
+        ],
+        "summary": "Return one SPOE file",
+        "operationId": "getOneSpoeFile",
+        "parameters": [
+          {
+            "type": "string",
+            "description": "SPOE file name",
+            "name": "name",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful operation",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "_version": {
+                  "type": "integer"
+                },
+                "data": {
+                  "type": "string"
+                }
+              }
+            },
+            "headers": {
+              "Configuration-Version": {
+                "type": "integer",
+                "description": "Spoe configuration file version"
+              }
+            }
+          },
+          "404": {
+            "$ref": "#/responses/NotFound"
+          },
+          "default": {
+            "$ref": "#/responses/DefaultError"
+          }
+        }
+      },
+      "delete": {
+        "description": "Deletes SPOE file.",
+        "tags": [
+          "Spoe"
+        ],
+        "summary": "Delete SPOE file",
+        "operationId": "deleteSpoeFile",
+        "parameters": [
+          {
+            "type": "string",
+            "description": "SPOE file name",
+            "name": "name",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "SPOE file deleted"
+          },
+          "404": {
+            "$ref": "#/responses/NotFound"
+          },
+          "default": {
+            "$ref": "#/responses/DefaultError"
+          }
+        }
+      }
+    },
+    "/services/haproxy/spoe/spoe_groups": {
+      "get": {
+        "description": "Returns an array of all configured SPOE groups in one SPOE scope.",
+        "tags": [
+          "Spoe"
+        ],
+        "summary": "Return an array of SPOE groups",
+        "operationId": "getSpoeGroups",
+        "parameters": [
+          {
+            "type": "string",
+            "description": "Spoe file name",
+            "name": "spoe",
+            "in": "query",
+            "required": true
+          },
+          {
+            "type": "string",
+            "description": "Spoe scope",
+            "name": "scope",
+            "in": "query",
+            "required": true
+          },
+          {
+            "$ref": "#/parameters/transaction_id"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful operation",
+            "schema": {
+              "type": "object",
+              "required": [
+                "data"
+              ],
+              "properties": {
+                "_version": {
+                  "type": "integer"
+                },
+                "data": {
+                  "$ref": "#/definitions/spoe_groups"
+                }
+              }
+            },
+            "headers": {
+              "Configuration-Version": {
+                "type": "integer",
+                "description": "Spoe configuration file version"
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/responses/DefaultError"
+          }
+        }
+      },
+      "post": {
+        "description": "Adds a new SPOE groups to the SPOE scope.",
+        "tags": [
+          "Spoe"
+        ],
+        "summary": "Add a new SPOE groups",
+        "operationId": "createSpoeGroup",
+        "parameters": [
+          {
+            "type": "string",
+            "description": "Spoe file name",
+            "name": "spoe",
+            "in": "query",
+            "required": true
+          },
+          {
+            "type": "string",
+            "description": "Spoe scope",
+            "name": "scope",
+            "in": "query",
+            "required": true
+          },
+          {
+            "name": "data",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/spoe_group"
+            }
+          },
+          {
+            "$ref": "#/parameters/transaction_id"
+          },
+          {
+            "$ref": "#/parameters/version"
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Spoe groups created",
+            "schema": {
+              "$ref": "#/definitions/spoe_group"
+            }
+          },
+          "400": {
+            "$ref": "#/responses/BadRequest"
+          },
+          "409": {
+            "$ref": "#/responses/AlreadyExists"
+          },
+          "default": {
+            "$ref": "#/responses/DefaultError"
+          }
+        }
+      }
+    },
+    "/services/haproxy/spoe/spoe_groups/{name}": {
+      "get": {
+        "description": "Returns one SPOE groups configuration in one SPOE scope.",
+        "tags": [
+          "Spoe"
+        ],
+        "summary": "Return a SPOE groups",
+        "operationId": "getSpoeGroup",
+        "parameters": [
+          {
+            "type": "string",
+            "description": "Spoe file name",
+            "name": "spoe",
+            "in": "query",
+            "required": true
+          },
+          {
+            "type": "string",
+            "description": "Spoe scope",
+            "name": "scope",
+            "in": "query",
+            "required": true
+          },
+          {
+            "type": "string",
+            "description": "Spoe group name",
+            "name": "name",
+            "in": "path",
+            "required": true
+          },
+          {
+            "$ref": "#/parameters/transaction_id"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful operation",
+            "schema": {
+              "type": "object",
+              "required": [
+                "data"
+              ],
+              "properties": {
+                "_version": {
+                  "type": "integer"
+                },
+                "data": {
+                  "$ref": "#/definitions/spoe_group"
+                }
+              }
+            },
+            "headers": {
+              "Configuration-Version": {
+                "type": "integer",
+                "description": "Spoe configuration file version"
+              }
+            }
+          },
+          "404": {
+            "$ref": "#/responses/NotFound"
+          },
+          "default": {
+            "$ref": "#/responses/DefaultError"
+          }
+        }
+      },
+      "put": {
+        "description": "Replaces a SPOE groups configuration in one SPOE scope.",
+        "tags": [
+          "Spoe"
+        ],
+        "summary": "Replace a SPOE groups",
+        "operationId": "replaceSpoeGroup",
+        "parameters": [
+          {
+            "type": "string",
+            "description": "Spoe file name",
+            "name": "spoe",
+            "in": "query",
+            "required": true
+          },
+          {
+            "type": "string",
+            "description": "Spoe scope",
+            "name": "scope",
+            "in": "query",
+            "required": true
+          },
+          {
+            "type": "string",
+            "description": "Spoe group name",
+            "name": "name",
+            "in": "path",
+            "required": true
+          },
+          {
+            "name": "data",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/spoe_group"
+            }
+          },
+          {
+            "$ref": "#/parameters/transaction_id"
+          },
+          {
+            "$ref": "#/parameters/version"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Spoe groups replaced",
+            "schema": {
+              "$ref": "#/definitions/spoe_group"
+            }
+          },
+          "400": {
+            "$ref": "#/responses/BadRequest"
+          },
+          "404": {
+            "$ref": "#/responses/NotFound"
+          },
+          "default": {
+            "$ref": "#/responses/DefaultError"
+          }
+        }
+      },
+      "delete": {
+        "description": "Deletes a SPOE groups from the one SPOE scope.",
+        "tags": [
+          "Spoe"
+        ],
+        "summary": "Delete a SPOE groups",
+        "operationId": "deleteSpoeGroup",
+        "parameters": [
+          {
+            "type": "string",
+            "description": "Spoe file name",
+            "name": "spoe",
+            "in": "query",
+            "required": true
+          },
+          {
+            "type": "string",
+            "description": "Spoe scope",
+            "name": "scope",
+            "in": "query",
+            "required": true
+          },
+          {
+            "type": "string",
+            "description": "Spoe group name",
+            "name": "name",
+            "in": "path",
+            "required": true
+          },
+          {
+            "$ref": "#/parameters/transaction_id"
+          },
+          {
+            "$ref": "#/parameters/version"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Spoe group deleted"
+          },
+          "404": {
+            "$ref": "#/responses/NotFound"
+          },
+          "default": {
+            "$ref": "#/responses/DefaultError"
+          }
+        }
+      }
+    },
+    "/services/haproxy/spoe/spoe_messages": {
+      "get": {
+        "description": "Returns an array of all configured spoe messages in one scope.",
+        "tags": [
+          "Spoe"
+        ],
+        "summary": "Return an array of spoe messages in one scope",
+        "operationId": "getSpoeMessages",
+        "parameters": [
+          {
+            "type": "string",
+            "description": "Spoe file name",
+            "name": "spoe",
+            "in": "query",
+            "required": true
+          },
+          {
+            "type": "string",
+            "description": "Spoe scope",
+            "name": "scope",
+            "in": "query",
+            "required": true
+          },
+          {
+            "$ref": "#/parameters/transaction_id"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful operation",
+            "schema": {
+              "type": "object",
+              "required": [
+                "data"
+              ],
+              "properties": {
+                "_version": {
+                  "type": "integer"
+                },
+                "data": {
+                  "$ref": "#/definitions/spoe_messages"
+                }
+              }
+            },
+            "headers": {
+              "Configuration-Version": {
+                "type": "integer",
+                "description": "Spoe configuration file version"
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/responses/DefaultError"
+          }
+        }
+      },
+      "post": {
+        "description": "Adds a new spoe message to the spoe scope.",
+        "tags": [
+          "Spoe"
+        ],
+        "summary": "Add a new spoe message to scope",
+        "operationId": "createSpoeMessage",
+        "parameters": [
+          {
+            "type": "string",
+            "description": "Spoe file name",
+            "name": "spoe",
+            "in": "query",
+            "required": true
+          },
+          {
+            "type": "string",
+            "description": "Spoe scope",
+            "name": "scope",
+            "in": "query",
+            "required": true
+          },
+          {
+            "name": "data",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/spoe_message"
+            }
+          },
+          {
+            "$ref": "#/parameters/transaction_id"
+          },
+          {
+            "$ref": "#/parameters/version"
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Spoe message created",
+            "schema": {
+              "$ref": "#/definitions/spoe_message"
+            }
+          },
+          "400": {
+            "$ref": "#/responses/BadRequest"
+          },
+          "409": {
+            "$ref": "#/responses/AlreadyExists"
+          },
+          "default": {
+            "$ref": "#/responses/DefaultError"
+          }
+        }
+      }
+    },
+    "/services/haproxy/spoe/spoe_messages/{name}": {
+      "get": {
+        "description": "Returns one spoe message configuration in SPOE scope.",
+        "tags": [
+          "Spoe"
+        ],
+        "summary": "Return a spoe message",
+        "operationId": "getSpoeMessage",
+        "parameters": [
+          {
+            "type": "string",
+            "description": "Spoe file name",
+            "name": "spoe",
+            "in": "query",
+            "required": true
+          },
+          {
+            "type": "string",
+            "description": "Spoe scope",
+            "name": "scope",
+            "in": "query",
+            "required": true
+          },
+          {
+            "type": "string",
+            "description": "Spoe message name",
+            "name": "name",
+            "in": "path",
+            "required": true
+          },
+          {
+            "$ref": "#/parameters/transaction_id"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful operation",
+            "schema": {
+              "type": "object",
+              "required": [
+                "data"
+              ],
+              "properties": {
+                "_version": {
+                  "type": "integer"
+                },
+                "data": {
+                  "$ref": "#/definitions/spoe_message"
+                }
+              }
+            },
+            "headers": {
+              "Configuration-Version": {
+                "type": "integer",
+                "description": "Spoe configuration file version"
+              }
+            }
+          },
+          "404": {
+            "$ref": "#/responses/NotFound"
+          },
+          "default": {
+            "$ref": "#/responses/DefaultError"
+          }
+        }
+      },
+      "put": {
+        "description": "Replaces a spoe message configuration in one SPOE scope.",
+        "tags": [
+          "Spoe"
+        ],
+        "summary": "Replace a spoe message",
+        "operationId": "replaceSpoeMessage",
+        "parameters": [
+          {
+            "type": "string",
+            "description": "Spoe file name",
+            "name": "spoe",
+            "in": "query",
+            "required": true
+          },
+          {
+            "type": "string",
+            "description": "Spoe scope",
+            "name": "scope",
+            "in": "query",
+            "required": true
+          },
+          {
+            "type": "string",
+            "description": "Spoe message name",
+            "name": "name",
+            "in": "path",
+            "required": true
+          },
+          {
+            "name": "data",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/spoe_message"
+            }
+          },
+          {
+            "$ref": "#/parameters/transaction_id"
+          },
+          {
+            "$ref": "#/parameters/version"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Spoe message replaced",
+            "schema": {
+              "$ref": "#/definitions/spoe_message"
+            }
+          },
+          "400": {
+            "$ref": "#/responses/BadRequest"
+          },
+          "404": {
+            "$ref": "#/responses/NotFound"
+          },
+          "default": {
+            "$ref": "#/responses/DefaultError"
+          }
+        }
+      },
+      "delete": {
+        "description": "Deletes a spoe message from the SPOE scope.",
+        "tags": [
+          "Spoe"
+        ],
+        "summary": "Delete a spoe message",
+        "operationId": "deleteSpoeMessage",
+        "parameters": [
+          {
+            "type": "string",
+            "description": "Spoe file name",
+            "name": "spoe",
+            "in": "query",
+            "required": true
+          },
+          {
+            "type": "string",
+            "description": "Spoe scope",
+            "name": "scope",
+            "in": "query",
+            "required": true
+          },
+          {
+            "type": "string",
+            "description": "Spoe message name",
+            "name": "name",
+            "in": "path",
+            "required": true
+          },
+          {
+            "$ref": "#/parameters/transaction_id"
+          },
+          {
+            "$ref": "#/parameters/version"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Spoe message deleted"
+          },
+          "404": {
+            "$ref": "#/responses/NotFound"
+          },
+          "default": {
+            "$ref": "#/responses/DefaultError"
+          }
+        }
+      }
+    },
+    "/services/haproxy/spoe/spoe_scopes": {
+      "get": {
+        "description": "Returns an array of all configured spoe scopes.",
+        "tags": [
+          "Spoe"
+        ],
+        "summary": "Return an array of spoe scopes",
+        "operationId": "getSpoeScopes",
+        "parameters": [
+          {
+            "type": "string",
+            "description": "Spoe file name",
+            "name": "spoe",
+            "in": "query",
+            "required": true
+          },
+          {
+            "$ref": "#/parameters/transaction_id"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful operation",
+            "schema": {
+              "type": "object",
+              "required": [
+                "data"
+              ],
+              "properties": {
+                "_version": {
+                  "type": "integer"
+                },
+                "data": {
+                  "$ref": "#/definitions/spoe_scopes"
+                }
+              }
+            },
+            "headers": {
+              "Configuration-Version": {
+                "type": "integer",
+                "description": "Spoe configuration file version"
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/responses/DefaultError"
+          }
+        }
+      },
+      "post": {
+        "description": "Adds a new spoe scope.",
+        "tags": [
+          "Spoe"
+        ],
+        "summary": "Add a new spoe scope",
+        "operationId": "createSpoeScope",
+        "parameters": [
+          {
+            "type": "string",
+            "description": "Spoe file name",
+            "name": "spoe",
+            "in": "query",
+            "required": true
+          },
+          {
+            "name": "data",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/spoe_scope"
+            }
+          },
+          {
+            "$ref": "#/parameters/transaction_id"
+          },
+          {
+            "$ref": "#/parameters/version"
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Spoe scope created",
+            "schema": {
+              "$ref": "#/definitions/spoe_scope"
+            }
+          },
+          "400": {
+            "$ref": "#/responses/BadRequest"
+          },
+          "409": {
+            "$ref": "#/responses/AlreadyExists"
+          },
+          "default": {
+            "$ref": "#/responses/DefaultError"
+          }
+        }
+      }
+    },
+    "/services/haproxy/spoe/spoe_scopes/{name}": {
+      "get": {
+        "description": "Returns one SPOE scope in one SPOE file.",
+        "tags": [
+          "Spoe"
+        ],
+        "summary": "Return one SPOE scope",
+        "operationId": "getSpoeScope",
+        "parameters": [
+          {
+            "type": "string",
+            "description": "Spoe file name",
+            "name": "spoe",
+            "in": "query",
+            "required": true
+          },
+          {
+            "type": "string",
+            "description": "Spoe scope",
+            "name": "name",
+            "in": "path",
+            "required": true
+          },
+          {
+            "$ref": "#/parameters/transaction_id"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful operation",
+            "schema": {
+              "type": "object",
+              "required": [
+                "data"
+              ],
+              "properties": {
+                "_version": {
+                  "type": "integer"
+                },
+                "data": {
+                  "$ref": "#/definitions/spoe_scope"
+                }
+              }
+            },
+            "headers": {
+              "Configuration-Version": {
+                "type": "integer",
+                "description": "Spoe configuration file version"
+              }
+            }
+          },
+          "404": {
+            "$ref": "#/responses/NotFound"
+          },
+          "default": {
+            "$ref": "#/responses/DefaultError"
+          }
+        }
+      },
+      "delete": {
+        "description": "Deletes a SPOE scope from the configuration file.",
+        "tags": [
+          "Spoe"
+        ],
+        "summary": "Delete a SPOE scope",
+        "operationId": "deleteSpoeScope",
+        "parameters": [
+          {
+            "type": "string",
+            "description": "Spoe file name",
+            "name": "spoe",
+            "in": "query",
+            "required": true
+          },
+          {
+            "type": "string",
+            "description": "Spoe scope name",
+            "name": "name",
+            "in": "path",
+            "required": true
+          },
+          {
+            "$ref": "#/parameters/transaction_id"
+          },
+          {
+            "$ref": "#/parameters/version"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Spoe scope deleted"
+          },
+          "404": {
+            "$ref": "#/responses/NotFound"
+          },
+          "default": {
+            "$ref": "#/responses/DefaultError"
+          }
+        }
+      }
+    },
+    "/services/haproxy/spoe/version": {
+      "get": {
+        "description": "Returns SPOE configuration version.",
+        "tags": [
+          "Spoe"
+        ],
+        "summary": "Return a SPOE configuration version",
+        "operationId": "getSpoeConfigurationVersion",
+        "parameters": [
+          {
+            "$ref": "#/parameters/transaction_id"
+          },
+          {
+            "type": "string",
+            "description": "Spoe file name",
+            "name": "spoe",
+            "in": "query",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "SPOE configuration version",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          "404": {
+            "$ref": "#/responses/NotFound"
+          },
+          "default": {
+            "$ref": "#/responses/DefaultError"
+          }
+        }
+      }
+    },
+    "/services/haproxy/spoe_transactions": {
+      "get": {
+        "description": "Returns a list of SPOE configuration transactions. Transactions can be filtered by their status.",
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "SpoeTransactions"
+        ],
+        "summary": "Return list of SPOE configuration transactions.",
+        "operationId": "getSpoeTransactions",
+        "parameters": [
+          {
+            "type": "string",
+            "description": "Spoe file name",
+            "name": "spoe",
+            "in": "query",
+            "required": true
+          },
+          {
+            "enum": [
+              "failed",
+              "in_progress"
+            ],
+            "type": "string",
+            "description": "Filter by transaction status",
+            "name": "status",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "$ref": "#/definitions/spoe_transactions"
+            }
+          },
+          "default": {
+            "$ref": "#/responses/DefaultError"
+          }
+        }
+      },
+      "post": {
+        "description": "Starts a new transaction and returns it's id",
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "SpoeTransactions"
+        ],
+        "summary": "Start a new transaction",
+        "operationId": "startSpoeTransaction",
+        "parameters": [
+          {
+            "type": "string",
+            "description": "Spoe file name",
+            "name": "spoe",
+            "in": "query",
+            "required": true
+          },
+          {
+            "type": "integer",
+            "description": "Configuration version on which to work on",
+            "name": "version",
+            "in": "query",
+            "required": true
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Transaction started",
+            "schema": {
+              "$ref": "#/definitions/spoe_transaction"
+            }
+          },
+          "429": {
+            "description": "Too many open transactions",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "code": {
+                  "type": "integer"
+                },
+                "message": {
+                  "type": "string"
+                }
+              },
+              "example": {
+                "code": 429,
+                "message": "cannot start a new transaction, reached the maximum amount of 20 active transactions available"
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/responses/DefaultError"
+          }
+        }
+      }
+    },
+    "/services/haproxy/spoe_transactions/{id}": {
+      "get": {
+        "description": "Returns one SPOE configuration transactions.",
+        "tags": [
+          "SpoeTransactions"
+        ],
+        "summary": "Return one SPOE configuration transactions",
+        "operationId": "getSpoeTransaction",
+        "parameters": [
+          {
+            "type": "string",
+            "description": "Spoe file name",
+            "name": "spoe",
+            "in": "query",
+            "required": true
+          },
+          {
+            "type": "string",
+            "description": "Transaction id",
+            "name": "id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful operation",
+            "schema": {
+              "$ref": "#/definitions/spoe_transaction"
+            }
+          },
+          "404": {
+            "$ref": "#/responses/NotFound"
+          },
+          "default": {
+            "$ref": "#/responses/DefaultError"
+          }
+        }
+      },
+      "put": {
+        "description": "Commit transaction, execute all operations in transaction and return msg",
+        "tags": [
+          "SpoeTransactions"
+        ],
+        "summary": "Commit transaction",
+        "operationId": "commitSpoeTransaction",
+        "parameters": [
+          {
+            "type": "string",
+            "description": "Spoe file name",
+            "name": "spoe",
+            "in": "query",
+            "required": true
+          },
+          {
+            "type": "string",
+            "description": "Transaction id",
+            "name": "id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "$ref": "#/parameters/force_reload"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Transaction succesfully commited",
+            "schema": {
+              "$ref": "#/definitions/spoe_transaction"
+            }
+          },
+          "202": {
+            "description": "Configuration change accepted and reload requested",
+            "schema": {
+              "$ref": "#/definitions/spoe_transaction"
+            },
+            "headers": {
+              "Reload-ID": {
+                "type": "string",
+                "description": "ID of the requested reload"
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/responses/BadRequest"
+          },
+          "404": {
+            "$ref": "#/responses/NotFound"
+          },
+          "default": {
+            "$ref": "#/responses/DefaultError"
+          }
+        }
+      },
+      "delete": {
+        "description": "Deletes a transaction.",
+        "tags": [
+          "SpoeTransactions"
+        ],
+        "summary": "Delete a transaction",
+        "operationId": "deleteSpoeTransaction",
+        "parameters": [
+          {
+            "type": "string",
+            "description": "Spoe file name",
+            "name": "spoe",
+            "in": "query",
+            "required": true
+          },
+          {
+            "type": "string",
+            "description": "Transaction id",
+            "name": "id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Transaction deleted"
+          },
+          "404": {
+            "$ref": "#/responses/NotFound"
+          },
+          "default": {
+            "$ref": "#/responses/DefaultError"
+          }
+        }
+      }
+    },
     "/services/haproxy/stats": {
       "get": {
         "description": "Returns a list of HAProxy stats endpoints.",
@@ -7007,6 +9124,421 @@ func init() {
         }
       }
     },
+    "/services/haproxy/storage": {
+      "get": {
+        "description": "Returns a list of endpoints that use HAProxy storage for persistency, e.g. maps, ssl certificates...",
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "Discovery"
+        ],
+        "summary": "Return list of HAProxy storage endpoints",
+        "operationId": "getStorageEndpoints",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "$ref": "#/definitions/endpoints"
+            }
+          },
+          "default": {
+            "$ref": "#/responses/DefaultError"
+          }
+        }
+      }
+    },
+    "/services/haproxy/storage/maps": {
+      "get": {
+        "description": "Returns a list of all managed map files",
+        "tags": [
+          "Storage"
+        ],
+        "summary": "Return a list of all managed map files",
+        "operationId": "getAllStorageMapFiles",
+        "responses": {
+          "200": {
+            "description": "Successful operation",
+            "schema": {
+              "$ref": "#/definitions/maps"
+            }
+          },
+          "404": {
+            "$ref": "#/responses/NotFound"
+          },
+          "default": {
+            "$ref": "#/responses/DefaultError"
+          }
+        }
+      },
+      "post": {
+        "description": "Creates a managed storage map file with its entries.",
+        "consumes": [
+          "multipart/form-data"
+        ],
+        "tags": [
+          "Storage"
+        ],
+        "summary": "Creates a managed storage map file with its entries",
+        "operationId": "createStorageMapFile",
+        "parameters": [
+          {
+            "type": "file",
+            "x-mimetype": "text/plain",
+            "description": "The map file contents",
+            "name": "file_upload",
+            "in": "formData"
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Map file created with its entries",
+            "schema": {
+              "$ref": "#/definitions/map"
+            }
+          },
+          "400": {
+            "$ref": "#/responses/BadRequest"
+          },
+          "409": {
+            "$ref": "#/responses/AlreadyExists"
+          },
+          "default": {
+            "$ref": "#/responses/DefaultError"
+          }
+        }
+      }
+    },
+    "/services/haproxy/storage/maps/{name}": {
+      "get": {
+        "description": "Returns the contents of one managed map file from disk",
+        "produces": [
+          "application/octet-stream"
+        ],
+        "tags": [
+          "Storage"
+        ],
+        "summary": "Return the contents of one managed map file from disk",
+        "operationId": "getOneStorageMap",
+        "parameters": [
+          {
+            "type": "string",
+            "description": "Map file storage_name",
+            "name": "name",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful operation",
+            "schema": {
+              "type": "file"
+            }
+          },
+          "404": {
+            "$ref": "#/responses/NotFound"
+          },
+          "default": {
+            "$ref": "#/responses/DefaultError"
+          }
+        }
+      },
+      "put": {
+        "description": "Replaces the contents of a managed map file on disk",
+        "consumes": [
+          "text/plain"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "Storage"
+        ],
+        "summary": "Replace contents of a managed map file on disk",
+        "operationId": "replaceStorageMapFile",
+        "parameters": [
+          {
+            "type": "string",
+            "description": "Map file storage_name",
+            "name": "name",
+            "in": "path",
+            "required": true
+          },
+          {
+            "name": "data",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "$ref": "#/parameters/skip_reload"
+          },
+          {
+            "$ref": "#/parameters/force_reload"
+          }
+        ],
+        "responses": {
+          "202": {
+            "description": "Configuration change accepted and reload requested",
+            "headers": {
+              "Reload-ID": {
+                "type": "string",
+                "description": "ID of the requested reload"
+              }
+            }
+          },
+          "204": {
+            "description": "Map file replaced"
+          },
+          "400": {
+            "$ref": "#/responses/BadRequest"
+          },
+          "404": {
+            "$ref": "#/responses/NotFound"
+          },
+          "default": {
+            "$ref": "#/responses/DefaultError"
+          }
+        }
+      },
+      "delete": {
+        "description": "Deletes a managed map file from disk.",
+        "tags": [
+          "Storage"
+        ],
+        "summary": "Deletes a managed map file from disk",
+        "operationId": "deleteStorageMap",
+        "parameters": [
+          {
+            "type": "string",
+            "description": "Map file storage_name",
+            "name": "name",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Map file deleted"
+          },
+          "404": {
+            "$ref": "#/responses/NotFound"
+          },
+          "default": {
+            "$ref": "#/responses/DefaultError"
+          }
+        }
+      }
+    },
+    "/services/haproxy/storage/ssl_certificates": {
+      "get": {
+        "description": "Returns all available SSL certificates on disk.",
+        "tags": [
+          "Storage"
+        ],
+        "summary": "Return all available SSL certificates on disk",
+        "operationId": "getAllStorageSSLCertificates",
+        "responses": {
+          "200": {
+            "description": "Successful operation",
+            "schema": {
+              "$ref": "#/definitions/ssl_certificates"
+            }
+          },
+          "404": {
+            "$ref": "#/responses/NotFound"
+          },
+          "default": {
+            "$ref": "#/responses/DefaultError"
+          }
+        }
+      },
+      "post": {
+        "description": "Creates SSL certificate.",
+        "consumes": [
+          "multipart/form-data"
+        ],
+        "tags": [
+          "Storage"
+        ],
+        "summary": "Create SSL certificate",
+        "operationId": "createStorageSSLCertificate",
+        "parameters": [
+          {
+            "type": "file",
+            "x-mimetype": "text/plain",
+            "description": "The SSL certificate to upload",
+            "name": "file_upload",
+            "in": "formData"
+          },
+          {
+            "$ref": "#/parameters/force_reload"
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "SSL certificate created",
+            "schema": {
+              "$ref": "#/definitions/ssl_certificate"
+            }
+          },
+          "400": {
+            "$ref": "#/responses/BadRequest"
+          },
+          "409": {
+            "$ref": "#/responses/AlreadyExists"
+          },
+          "default": {
+            "$ref": "#/responses/DefaultError"
+          }
+        }
+      }
+    },
+    "/services/haproxy/storage/ssl_certificates/{name}": {
+      "get": {
+        "description": "Returns one SSL certificate from disk.",
+        "tags": [
+          "Storage"
+        ],
+        "summary": "Return one SSL certificate from disk",
+        "operationId": "getOneStorageSSLCertificate",
+        "parameters": [
+          {
+            "type": "string",
+            "description": "SSL certificate name",
+            "name": "name",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful operation",
+            "schema": {
+              "$ref": "#/definitions/ssl_certificate"
+            }
+          },
+          "404": {
+            "$ref": "#/responses/NotFound"
+          },
+          "default": {
+            "$ref": "#/responses/DefaultError"
+          }
+        }
+      },
+      "put": {
+        "description": "Replaces SSL certificate on disk.",
+        "consumes": [
+          "text/plain"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "Storage"
+        ],
+        "summary": "Replace SSL certificates on disk",
+        "operationId": "replaceStorageSSLCertificate",
+        "parameters": [
+          {
+            "type": "string",
+            "description": "SSL certificate name",
+            "name": "name",
+            "in": "path",
+            "required": true
+          },
+          {
+            "name": "data",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "$ref": "#/parameters/skip_reload"
+          },
+          {
+            "$ref": "#/parameters/force_reload"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "SSL certificate replaced",
+            "schema": {
+              "$ref": "#/definitions/ssl_certificate"
+            }
+          },
+          "202": {
+            "description": "SSL certificate replaced and reload requested",
+            "schema": {
+              "$ref": "#/definitions/ssl_certificate"
+            },
+            "headers": {
+              "Reload-ID": {
+                "type": "string",
+                "description": "ID of the requested reload"
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/responses/BadRequest"
+          },
+          "404": {
+            "$ref": "#/responses/NotFound"
+          },
+          "default": {
+            "$ref": "#/responses/DefaultError"
+          }
+        }
+      },
+      "delete": {
+        "description": "Deletes SSL certificate from disk.",
+        "tags": [
+          "Storage"
+        ],
+        "summary": "Delete SSL certificate from disk",
+        "operationId": "deleteStorageSSLCertificate",
+        "parameters": [
+          {
+            "type": "string",
+            "description": "SSL certificate name",
+            "name": "name",
+            "in": "path",
+            "required": true
+          },
+          {
+            "$ref": "#/parameters/skip_reload"
+          },
+          {
+            "$ref": "#/parameters/force_reload"
+          }
+        ],
+        "responses": {
+          "202": {
+            "description": "SSL certificate deleted and reload requested",
+            "headers": {
+              "Reload-ID": {
+                "type": "string",
+                "description": "ID of the requested reload"
+              }
+            }
+          },
+          "204": {
+            "description": "SSL certificate deleted"
+          },
+          "404": {
+            "$ref": "#/responses/NotFound"
+          },
+          "default": {
+            "$ref": "#/responses/DefaultError"
+          }
+        }
+      }
+    },
     "/services/haproxy/transactions": {
       "get": {
         "description": "Returns a list of HAProxy configuration transactions. Transactions can be filtered by their status.",
@@ -7066,6 +9598,24 @@ func init() {
             "description": "Transaction started",
             "schema": {
               "$ref": "#/definitions/transaction"
+            }
+          },
+          "429": {
+            "description": "Too many open transactions",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "code": {
+                  "type": "integer"
+                },
+                "message": {
+                  "type": "string"
+                }
+              },
+              "example": {
+                "code": 429,
+                "message": "cannot start a new transaction, reached the maximum amount of 20 active transactions available"
+              }
             }
           },
           "default": {
@@ -7149,6 +9699,9 @@ func init() {
           },
           "404": {
             "$ref": "#/responses/NotFound"
+          },
+          "406": {
+            "$ref": "#/responses/NotAcceptable"
           },
           "default": {
             "$ref": "#/responses/DefaultError"
@@ -7266,12 +9819,187 @@ func init() {
       },
       "additionalProperties": false
     },
+    "acl_file": {
+      "description": "ACL File",
+      "type": "object",
+      "title": "ACL File",
+      "properties": {
+        "description": {
+          "type": "string"
+        },
+        "id": {
+          "type": "string"
+        },
+        "storage_name": {
+          "type": "string"
+        }
+      }
+    },
+    "acl_file_entry": {
+      "description": "One ACL File Entry",
+      "type": "object",
+      "title": "One ACL File Entry",
+      "properties": {
+        "id": {
+          "type": "string",
+          "readOnly": true
+        },
+        "value": {
+          "type": "string"
+        }
+      }
+    },
+    "acl_files": {
+      "description": "Array of runtime acl files",
+      "type": "array",
+      "title": "ACL Files Array",
+      "items": {
+        "$ref": "#/definitions/acl_file"
+      }
+    },
+    "acl_files_entries": {
+      "description": "Array of entries of one runtime acl file",
+      "type": "array",
+      "title": "ACL Files Entries",
+      "items": {
+        "$ref": "#/definitions/acl_file_entry"
+      }
+    },
     "acls": {
       "description": "HAProxy ACL lines array (corresponds to acl directives)",
       "type": "array",
       "title": "ACL Lines Array",
       "items": {
         "$ref": "#/definitions/acl"
+      }
+    },
+    "awsFilters": {
+      "type": "object",
+      "required": [
+        "key",
+        "value"
+      ],
+      "properties": {
+        "key": {
+          "description": "Key to use as filter, using the format specified at https://docs.aws.amazon.com/cli/latest/reference/ec2/describe-instances.html#options",
+          "type": "string"
+        },
+        "value": {
+          "description": "Value of the filter to use",
+          "type": "string"
+        }
+      }
+    },
+    "awsRegion": {
+      "description": "AWS region configuration",
+      "type": "object",
+      "title": "AWS region",
+      "required": [
+        "name",
+        "region",
+        "enabled",
+        "retry_timeout",
+        "ipv4_address"
+      ],
+      "properties": {
+        "access_key_id": {
+          "description": "AWS Access Key ID.",
+          "type": "string"
+        },
+        "allowlist": {
+          "description": "Specify the AWS filters used to filter the EC2 instances to add",
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/awsFilters"
+          }
+        },
+        "denylist": {
+          "description": "Specify the AWS filters used to filter the EC2 instances to ignore",
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/awsFilters"
+          }
+        },
+        "description": {
+          "type": "string"
+        },
+        "enabled": {
+          "type": "boolean"
+        },
+        "id": {
+          "description": "Auto generated ID.",
+          "type": "string",
+          "pattern": "^[^\\s]+$",
+          "x-nullable": true,
+          "readOnly": true
+        },
+        "ipv4_address": {
+          "description": "Select which IPv4 address the Service Discovery has to use for the backend server entry",
+          "type": "string",
+          "enum": [
+            "private",
+            "public"
+          ]
+        },
+        "name": {
+          "type": "string"
+        },
+        "region": {
+          "type": "string"
+        },
+        "retry_timeout": {
+          "description": "Duration in seconds in-between data pulling requests to the AWS region",
+          "type": "integer",
+          "minimum": 1
+        },
+        "secret_access_key": {
+          "description": "AWS Secret Access Key.",
+          "type": "string"
+        },
+        "server_slots_base": {
+          "type": "integer",
+          "default": 10
+        },
+        "server_slots_growth_increment": {
+          "type": "integer"
+        },
+        "server_slots_growth_type": {
+          "type": "string",
+          "default": "exponential",
+          "enum": [
+            "linear",
+            "exponential"
+          ]
+        }
+      },
+      "example": {
+        "access_key_id": "****************L7GT",
+        "allowlist": [
+          {
+            "key": "tag-key",
+            "value": "Instance:Having:This:Tag"
+          }
+        ],
+        "denylist": [
+          {
+            "key": "tag:Environment",
+            "value": "development"
+          }
+        ],
+        "enabled": true,
+        "id": 0,
+        "ipv4_address": "private",
+        "name": "frontend-service",
+        "region": "us-east-1",
+        "secret_access_key": "****************soLl"
+      }
+    },
+    "awsRegions": {
+      "description": "AWS regions array",
+      "type": "array",
+      "title": "AWS",
+      "items": {
+        "$ref": "#/definitions/awsRegion"
       }
     },
     "backend": {
@@ -7298,7 +10026,8 @@ func init() {
             "mysql-check",
             "pgsql-check",
             "tcp-check",
-            "redis-check"
+            "redis-check",
+            "httpchk"
           ],
           "x-display-name": "Advanced Check"
         },
@@ -7470,13 +10199,13 @@ func init() {
             }
           }
         },
-        "httpchk": {
+        "httpchk_params": {
           "x-dependency": {
             "mode": {
               "value": "http"
             }
           },
-          "$ref": "#/definitions/httpchk"
+          "$ref": "#/definitions/httpchk_params"
         },
         "log_tag": {
           "type": "string",
@@ -7489,10 +10218,16 @@ func init() {
             "tcp"
           ]
         },
+        "mysql_check_params": {
+          "$ref": "#/definitions/mysql_check_params"
+        },
         "name": {
           "type": "string",
           "pattern": "^[A-Za-z0-9-_.:]+$",
           "x-nullable": false
+        },
+        "pgsql_check_params": {
+          "$ref": "#/definitions/pgsql_check_params"
         },
         "queue_timeout": {
           "type": "integer",
@@ -7508,6 +10243,9 @@ func init() {
         "server_timeout": {
           "type": "integer",
           "x-nullable": true
+        },
+        "smtpchk_params": {
+          "$ref": "#/definitions/smtpchk_params"
         },
         "stats_options": {
           "$ref": "#/definitions/stats_options"
@@ -7551,18 +10289,23 @@ func init() {
               ]
             }
           }
+        },
+        "tunnel_timeout": {
+          "type": "integer",
+          "x-nullable": true
         }
       },
       "additionalProperties": false,
       "example": {
+        "adv_check": "httpchk",
         "balance": {
           "algorithm": "roundrobin"
         },
         "forwardfor": {
           "enabled": "enabled"
         },
-        "httpchk": {
-          "method": "OPTIONS",
+        "httpchk_params": {
+          "method": "GET",
           "uri": "/check",
           "version": "HTTP/1.1"
         },
@@ -7620,7 +10363,7 @@ func init() {
       "example": {
         "cond": "if",
         "cond_test": "{ req_ssl_sni -i www.example.com }",
-        "id": 0,
+        "index": 0,
         "name": "test_backend"
       }
     },
@@ -7663,7 +10406,6 @@ func init() {
         },
         "hdr_name": {
           "type": "string",
-          "pattern": "^[^\\s]+$",
           "x-dependency": {
             "algorithm": {
               "required": true,
@@ -7703,7 +10445,6 @@ func init() {
         },
         "uri_depth": {
           "type": "integer",
-          "pattern": "^[^\\d+$]",
           "x-dependency": {
             "algorithm": {
               "value": "uri"
@@ -7713,7 +10454,6 @@ func init() {
         },
         "uri_len": {
           "type": "integer",
-          "pattern": "^[^\\d+$]",
           "x-dependency": {
             "algorithm": {
               "value": "uri"
@@ -7752,7 +10492,6 @@ func init() {
         },
         "url_param_max_wait": {
           "type": "integer",
-          "pattern": "^[^\\d+$]",
           "x-dependency": {
             "algorithm": {
               "value": "url_param"
@@ -7770,6 +10509,9 @@ func init() {
         "name"
       ],
       "properties": {
+        "accept_netscaler_cip": {
+          "type": "integer"
+        },
         "accept_proxy": {
           "type": "boolean"
         },
@@ -7785,10 +10527,228 @@ func init() {
           "pattern": "^[^\\s]+$",
           "x-display-name": "ALPN Protocols"
         },
+        "backlog": {
+          "type": "string"
+        },
+        "ca_ignore_err": {
+          "type": "string",
+          "x-dependency": {
+            "ssl": {
+              "value": true
+            }
+          }
+        },
+        "ca_sign_file": {
+          "type": "string",
+          "x-dependency": {
+            "ssl": {
+              "value": true
+            }
+          }
+        },
+        "ca_sign_pass": {
+          "type": "string",
+          "x-dependency": {
+            "ssl": {
+              "value": true
+            }
+          },
+          "x-display-name": "Passphrase"
+        },
+        "ca_verify_file": {
+          "type": "string",
+          "x-dependency": {
+            "ca_file": {
+              "value": true
+            }
+          }
+        },
+        "ciphers": {
+          "type": "string",
+          "x-dependency": {
+            "ssl": {
+              "value": true
+            }
+          }
+        },
+        "ciphersuites": {
+          "type": "string",
+          "x-dependency": {
+            "ssl": {
+              "value": true
+            }
+          }
+        },
+        "crl_file": {
+          "type": "string",
+          "x-dependency": {
+            "ssl": {
+              "value": true
+            }
+          }
+        },
+        "crt_ignore_err": {
+          "type": "string",
+          "x-dependency": {
+            "ssl": {
+              "value": true
+            }
+          }
+        },
+        "crt_list": {
+          "type": "string",
+          "x-dependency": {
+            "ssl": {
+              "value": true
+            }
+          }
+        },
+        "curves": {
+          "type": "string",
+          "x-dependency": {
+            "ssl": {
+              "value": true
+            }
+          }
+        },
+        "defer_accept": {
+          "type": "boolean"
+        },
+        "ecdhe": {
+          "type": "string",
+          "x-dependency": {
+            "ssl": {
+              "value": true
+            }
+          }
+        },
+        "expose_fd_listeners": {
+          "type": "boolean"
+        },
+        "force_sslv3": {
+          "type": "boolean"
+        },
+        "force_tlsv10": {
+          "type": "boolean"
+        },
+        "force_tlsv11": {
+          "type": "boolean"
+        },
+        "force_tlsv12": {
+          "type": "boolean"
+        },
+        "force_tlsv13": {
+          "type": "boolean"
+        },
+        "generate_certificates": {
+          "type": "boolean",
+          "x-dependency": {
+            "ssl": {
+              "value": true
+            }
+          }
+        },
+        "gid": {
+          "type": "integer",
+          "x-display-name": "Group ID"
+        },
+        "group": {
+          "type": "string",
+          "x-display-name": "Group name"
+        },
+        "id": {
+          "type": "string",
+          "x-display-name": "Socket ID"
+        },
+        "interface": {
+          "type": "string"
+        },
+        "level": {
+          "type": "string",
+          "enum": [
+            "user",
+            "operator",
+            "admin"
+          ]
+        },
+        "maxconn": {
+          "type": "integer"
+        },
+        "mode": {
+          "type": "string"
+        },
+        "mss": {
+          "type": "string"
+        },
         "name": {
           "type": "string",
           "pattern": "^[^\\s]+$",
           "x-nullable": false
+        },
+        "namespace": {
+          "type": "string"
+        },
+        "nice": {
+          "type": "integer"
+        },
+        "no_ca_names": {
+          "type": "boolean",
+          "x-dependency": {
+            "ssl": {
+              "value": true
+            }
+          }
+        },
+        "no_sslv3": {
+          "type": "boolean",
+          "x-dependency": {
+            "ssl": {
+              "value": true
+            }
+          }
+        },
+        "no_tls_tickets": {
+          "type": "boolean",
+          "x-dependency": {
+            "ssl": {
+              "value": true
+            }
+          }
+        },
+        "no_tlsv10": {
+          "type": "boolean",
+          "x-dependency": {
+            "ssl": {
+              "value": true
+            }
+          }
+        },
+        "no_tlsv11": {
+          "type": "boolean",
+          "x-dependency": {
+            "ssl": {
+              "value": true
+            }
+          }
+        },
+        "no_tlsv12": {
+          "type": "boolean",
+          "x-dependency": {
+            "ssl": {
+              "value": true
+            }
+          }
+        },
+        "no_tlsv13": {
+          "type": "boolean",
+          "x-dependency": {
+            "ssl": {
+              "value": true
+            }
+          }
+        },
+        "npn": {
+          "type": "string"
         },
         "port": {
           "type": "integer",
@@ -7796,9 +10756,31 @@ func init() {
           "minimum": 1,
           "x-nullable": true
         },
+        "port-range-end": {
+          "type": "integer",
+          "maximum": 65535,
+          "minimum": 1,
+          "x-nullable": true
+        },
+        "prefer_client_ciphers": {
+          "type": "boolean"
+        },
         "process": {
           "type": "string",
           "pattern": "^[^\\s]+$"
+        },
+        "proto": {
+          "type": "string",
+          "x-display-name": "Protocol name"
+        },
+        "severity_output": {
+          "type": "string",
+          "enum": [
+            "none",
+            "number",
+            "string"
+          ],
+          "x-display-name": "Format"
         },
         "ssl": {
           "type": "boolean"
@@ -7822,14 +10804,57 @@ func init() {
             }
           }
         },
+        "ssl_max_ver": {
+          "type": "string",
+          "enum": [
+            "SSLv3",
+            "TLSv1.0",
+            "TLSv1.1",
+            "TLSv1.2",
+            "TLSv1.3"
+          ]
+        },
+        "ssl_min_ver": {
+          "type": "string",
+          "enum": [
+            "SSLv3",
+            "TLSv1.0",
+            "TLSv1.1",
+            "TLSv1.2",
+            "TLSv1.3"
+          ]
+        },
+        "strict_sni": {
+          "type": "boolean",
+          "x-dependency": {
+            "ssl": {
+              "value": true
+            }
+          }
+        },
         "tcp_user_timeout": {
           "type": "integer",
           "x-nullable": true
         },
+        "tfo": {
+          "type": "boolean"
+        },
+        "tls_ticket_keys": {
+          "type": "string"
+        },
         "transparent": {
           "type": "boolean"
         },
+        "uid": {
+          "type": "string"
+        },
+        "user": {
+          "type": "string"
+        },
         "v4v6": {
+          "type": "boolean"
+        },
+        "v6only": {
           "type": "boolean"
         },
         "verify": {
@@ -7917,6 +10942,113 @@ func init() {
         }
       }
     },
+    "consul": {
+      "description": "Consul server configuration",
+      "type": "object",
+      "title": "Consul server",
+      "required": [
+        "address",
+        "port",
+        "enabled",
+        "retry_timeout"
+      ],
+      "properties": {
+        "address": {
+          "type": "string",
+          "pattern": "^[^\\s]+$"
+        },
+        "description": {
+          "type": "string"
+        },
+        "enabled": {
+          "type": "boolean"
+        },
+        "id": {
+          "description": "Auto generated ID.",
+          "type": "string",
+          "pattern": "^[^\\s]+$",
+          "x-nullable": true
+        },
+        "name": {
+          "type": "string"
+        },
+        "port": {
+          "type": "integer",
+          "maximum": 65535,
+          "minimum": 1
+        },
+        "retry_timeout": {
+          "description": "Duration in seconds in-between data pulling requests to the consul server",
+          "type": "integer",
+          "minimum": 1
+        },
+        "server_slots_base": {
+          "type": "integer",
+          "default": 10
+        },
+        "server_slots_growth_increment": {
+          "type": "integer"
+        },
+        "server_slots_growth_type": {
+          "type": "string",
+          "default": "exponential",
+          "enum": [
+            "linear",
+            "exponential"
+          ]
+        },
+        "service-blacklist": {
+          "description": "deprecated, use service_denylist",
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[^\\s]+$"
+          }
+        },
+        "service-whitelist": {
+          "description": "deprecated, use service_allowlist",
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[^\\s]+$"
+          }
+        },
+        "service_allowlist": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[^\\s]+$"
+          }
+        },
+        "service_denylist": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[^\\s]+$"
+          }
+        },
+        "token": {
+          "type": "string",
+          "pattern": "^[^\\s]+$"
+        }
+      },
+      "additionalProperties": false,
+      "example": {
+        "address": "127.0.0.1",
+        "enabled": true,
+        "id": "0",
+        "port": 90,
+        "retry_timeout": 10
+      }
+    },
+    "consuls": {
+      "description": "Consuls array",
+      "type": "array",
+      "title": "Consuls",
+      "items": {
+        "$ref": "#/definitions/consul"
+      }
+    },
     "cookie": {
       "type": "object",
       "required": [
@@ -7947,12 +11079,10 @@ func init() {
           "type": "boolean"
         },
         "maxidle": {
-          "type": "integer",
-          "pattern": "^[^\\d+$]"
+          "type": "integer"
         },
         "maxlife": {
-          "type": "integer",
-          "pattern": "^[^\\d+$]"
+          "type": "integer"
         },
         "name": {
           "type": "string",
@@ -7982,7 +11112,79 @@ func init() {
     },
     "default_server": {
       "type": "object",
+      "title": "Default Server",
       "properties": {
+        "address": {
+          "type": "string",
+          "pattern": "^[^\\s]+$",
+          "x-nullable": false
+        },
+        "agent-addr": {
+          "type": "string",
+          "pattern": "^[^\\s]+$"
+        },
+        "agent-check": {
+          "type": "string",
+          "enum": [
+            "enabled",
+            "disabled"
+          ],
+          "x-dependency": {
+            "agent-port": {
+              "required": true
+            }
+          }
+        },
+        "agent-inter": {
+          "type": "integer",
+          "x-nullable": true
+        },
+        "agent-port": {
+          "type": "integer",
+          "maximum": 65535,
+          "minimum": 1,
+          "x-nullable": true
+        },
+        "agent-send": {
+          "type": "string"
+        },
+        "allow_0rtt": {
+          "type": "boolean"
+        },
+        "alpn": {
+          "type": "string",
+          "pattern": "^[^\\s]+$",
+          "x-display-name": "ALPN Protocols"
+        },
+        "backup": {
+          "type": "string",
+          "enum": [
+            "enabled",
+            "disabled"
+          ]
+        },
+        "ca_file": {
+          "type": "string",
+          "x-dependency": {
+            "ssl": {
+              "value": true
+            }
+          }
+        },
+        "check": {
+          "type": "string",
+          "enum": [
+            "enabled",
+            "disabled"
+          ]
+        },
+        "check-send-proxy": {
+          "type": "string",
+          "enum": [
+            "enabled",
+            "disabled"
+          ]
+        },
         "check-sni": {
           "type": "string",
           "pattern": "^[^\\s]+$"
@@ -7994,16 +11196,121 @@ func init() {
             "disabled"
           ]
         },
+        "check_alpn": {
+          "type": "string",
+          "pattern": "^[^\\s]+$",
+          "x-display-name": "Protocols"
+        },
+        "check_proto": {
+          "type": "string",
+          "pattern": "^[^\\s]+$",
+          "x-display-name": "Name"
+        },
+        "check_via_socks4": {
+          "type": "string",
+          "enum": [
+            "enabled",
+            "disabled"
+          ]
+        },
+        "ciphers": {
+          "type": "string",
+          "x-dependency": {
+            "ssl": {
+              "value": "enabled"
+            }
+          }
+        },
+        "ciphersuites": {
+          "type": "string",
+          "x-dependency": {
+            "ssl": {
+              "value": "enabled"
+            }
+          }
+        },
+        "cookie": {
+          "type": "string",
+          "pattern": "^[^\\s]+$"
+        },
+        "crl_file": {
+          "type": "string",
+          "x-dependency": {
+            "ssl": {
+              "value": "enabled"
+            }
+          }
+        },
+        "disabled": {
+          "type": "string",
+          "enum": [
+            "enabled",
+            "disabled"
+          ]
+        },
         "downinter": {
           "type": "integer",
           "x-nullable": true
         },
+        "enabled": {
+          "type": "string",
+          "enum": [
+            "enabled",
+            "disabled"
+          ]
+        },
+        "error_limit": {
+          "type": "integer",
+          "x-display-name": "Error count"
+        },
         "fall": {
           "type": "integer",
+          "x-display-name": "Nr. of consecutive failed checks",
           "x-nullable": true
         },
         "fastinter": {
           "type": "integer",
+          "x-nullable": true
+        },
+        "force_sslv3": {
+          "type": "string",
+          "enum": [
+            "enabled",
+            "disabled"
+          ]
+        },
+        "force_tlsv10": {
+          "type": "string",
+          "enum": [
+            "enabled",
+            "disabled"
+          ]
+        },
+        "force_tlsv11": {
+          "type": "string",
+          "enum": [
+            "enabled",
+            "disabled"
+          ]
+        },
+        "force_tlsv12": {
+          "type": "string",
+          "enum": [
+            "enabled",
+            "disabled"
+          ]
+        },
+        "force_tlsv13": {
+          "type": "string",
+          "enum": [
+            "enabled",
+            "disabled"
+          ]
+        },
+        "health_check_port": {
+          "type": "integer",
+          "maximum": 65535,
+          "minimum": 1,
           "x-nullable": true
         },
         "init-addr": {
@@ -8014,11 +11321,163 @@ func init() {
           "type": "integer",
           "x-nullable": true
         },
+        "log_proto": {
+          "type": "string",
+          "enum": [
+            "legacy",
+            "octet-count"
+          ]
+        },
+        "max_reuse": {
+          "type": "integer",
+          "x-nullable": true
+        },
+        "maxconn": {
+          "type": "integer",
+          "x-display-name": "Max Concurrent Connections",
+          "x-nullable": true
+        },
+        "maxqueue": {
+          "type": "integer",
+          "x-display-name": "Max Number of Connections",
+          "x-nullable": true
+        },
+        "minconn": {
+          "type": "integer",
+          "x-nullable": true
+        },
+        "name": {
+          "type": "string",
+          "pattern": "^[^\\s]+$",
+          "x-nullable": false
+        },
+        "namespace": {
+          "type": "string"
+        },
+        "no_sslv3": {
+          "type": "string",
+          "enum": [
+            "enabled",
+            "disabled"
+          ]
+        },
+        "no_tlsv10": {
+          "type": "string",
+          "enum": [
+            "enabled",
+            "disabled"
+          ]
+        },
+        "no_tlsv11": {
+          "type": "string",
+          "enum": [
+            "enabled",
+            "disabled"
+          ]
+        },
+        "no_tlsv12": {
+          "type": "string",
+          "enum": [
+            "enabled",
+            "disabled"
+          ]
+        },
+        "no_tlsv13": {
+          "type": "string",
+          "enum": [
+            "enabled",
+            "disabled"
+          ]
+        },
+        "no_verifyhost": {
+          "type": "string",
+          "enum": [
+            "enabled",
+            "disabled"
+          ]
+        },
+        "npn": {
+          "type": "string",
+          "x-dependency": {
+            "ssl": {
+              "value": "enabled"
+            }
+          }
+        },
+        "observe": {
+          "type": "string",
+          "enum": [
+            "layer4",
+            "layer7"
+          ],
+          "x-dependency": {
+            "ssl": {
+              "value": "enabled"
+            }
+          }
+        },
+        "on-error": {
+          "type": "string",
+          "enum": [
+            "fastinter",
+            "fail-check",
+            "sudden-death",
+            "mark-down"
+          ]
+        },
+        "on-marked-down": {
+          "type": "string",
+          "enum": [
+            "shutdown-sessions"
+          ]
+        },
+        "on-marked-up": {
+          "type": "string",
+          "enum": [
+            "shutdown-backup-sessions"
+          ]
+        },
+        "pool_low_conn": {
+          "type": "integer",
+          "x-nullable": true
+        },
+        "pool_max_conn": {
+          "type": "integer",
+          "x-nullable": true
+        },
+        "pool_purge_delay": {
+          "type": "integer",
+          "x-nullable": true
+        },
         "port": {
           "type": "integer",
           "maximum": 65535,
           "minimum": 1,
           "x-nullable": true
+        },
+        "proto": {
+          "type": "string",
+          "pattern": "^[^\\s]+$"
+        },
+        "proxy-v2-options": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "ssl",
+              "cert-cn",
+              "ssl-cipher",
+              "cert-sig",
+              "cert-key",
+              "authority",
+              "crc32c",
+              "unique-id"
+            ]
+          }
+        },
+        "redir": {
+          "type": "string",
+          "x-display-name": "Prefix"
         },
         "resolve-net": {
           "type": "string",
@@ -8032,11 +11491,19 @@ func init() {
         "resolve-prefer": {
           "type": "string",
           "pattern": "^[^\\s]+$",
+          "enum": [
+            "ipv4",
+            "ipv6"
+          ],
           "x-dependency": {
             "resolvers": {
               "required": true
             }
           }
+        },
+        "resolve_opts": {
+          "type": "string",
+          "pattern": "^[^,\\s][^\\,]*[^,\\s]*$"
         },
         "resolvers": {
           "type": "string",
@@ -8050,6 +11517,34 @@ func init() {
           "type": "integer",
           "x-nullable": true
         },
+        "send-proxy": {
+          "type": "string",
+          "enum": [
+            "enabled",
+            "disabled"
+          ]
+        },
+        "send-proxy-v2": {
+          "type": "string",
+          "enum": [
+            "enabled",
+            "disabled"
+          ]
+        },
+        "send_proxy_v2_ssl": {
+          "type": "string",
+          "enum": [
+            "enabled",
+            "disabled"
+          ]
+        },
+        "send_proxy_v2_ssl_cn": {
+          "type": "string",
+          "enum": [
+            "enabled",
+            "disabled"
+          ]
+        },
         "slowstart": {
           "type": "integer",
           "x-nullable": true
@@ -8057,6 +11552,120 @@ func init() {
         "sni": {
           "type": "string",
           "pattern": "^[^\\s]+$"
+        },
+        "socks4": {
+          "type": "string",
+          "pattern": "^[^\\s]+$",
+          "x-dependency": {
+            "check-via-socks4": {
+              "required": true
+            }
+          }
+        },
+        "source": {
+          "type": "string"
+        },
+        "ssl": {
+          "type": "string",
+          "enum": [
+            "enabled",
+            "disabled"
+          ]
+        },
+        "ssl_certificate": {
+          "type": "string",
+          "pattern": "^[^\\s]+$",
+          "x-dependency": {
+            "ssl": {
+              "value": "enabled"
+            }
+          }
+        },
+        "ssl_max_ver": {
+          "type": "string",
+          "enum": [
+            "SSLv3",
+            "TLSv1.0",
+            "TLSv1.1",
+            "TLSv1.2",
+            "TLSv1.3"
+          ]
+        },
+        "ssl_min_ver": {
+          "type": "string",
+          "enum": [
+            "SSLv3",
+            "TLSv1.0",
+            "TLSv1.1",
+            "TLSv1.2",
+            "TLSv1.3"
+          ]
+        },
+        "ssl_reuse": {
+          "type": "string",
+          "enum": [
+            "enabled",
+            "disabled"
+          ]
+        },
+        "stick": {
+          "type": "string",
+          "enum": [
+            "enabled",
+            "disabled"
+          ]
+        },
+        "tcp_ut": {
+          "type": "integer"
+        },
+        "tfo": {
+          "type": "string",
+          "enum": [
+            "enabled",
+            "disabled"
+          ]
+        },
+        "tls_tickets": {
+          "type": "string",
+          "enum": [
+            "enabled",
+            "disabled"
+          ],
+          "x-dependency": {
+            "ssl": {
+              "value": "enabled"
+            }
+          }
+        },
+        "track": {
+          "type": "string"
+        },
+        "verify": {
+          "type": "string",
+          "enum": [
+            "none",
+            "required"
+          ],
+          "x-dependency": {
+            "ssl": {
+              "value": "enabled"
+            }
+          }
+        },
+        "verifyhost": {
+          "type": "string",
+          "x-dependency": {
+            "ssl": {
+              "value": "enabled"
+            },
+            "verify": {
+              "value": "required"
+            }
+          }
+        },
+        "weight": {
+          "type": "integer",
+          "x-nullable": true
         }
       }
     },
@@ -8081,7 +11690,8 @@ func init() {
             "mysql-check",
             "pgsql-check",
             "tcp-check",
-            "redis-check"
+            "redis-check",
+            "httpchk"
           ],
           "x-display-name": "Advanced Check"
         },
@@ -8232,8 +11842,8 @@ func init() {
             "safe"
           ]
         },
-        "httpchk": {
-          "$ref": "#/definitions/httpchk"
+        "httpchk_params": {
+          "$ref": "#/definitions/httpchk_params"
         },
         "httplog": {
           "type": "boolean",
@@ -8277,6 +11887,15 @@ func init() {
             "http"
           ]
         },
+        "monitor_uri": {
+          "$ref": "#/definitions/monitor_uri"
+        },
+        "mysql_check_params": {
+          "$ref": "#/definitions/mysql_check_params"
+        },
+        "pgsql_check_params": {
+          "$ref": "#/definitions/pgsql_check_params"
+        },
         "queue_timeout": {
           "type": "integer",
           "x-nullable": true
@@ -8292,12 +11911,19 @@ func init() {
           "type": "integer",
           "x-nullable": true
         },
+        "smtpchk_params": {
+          "$ref": "#/definitions/smtpchk_params"
+        },
         "stats_options": {
           "$ref": "#/definitions/stats_options"
         },
         "tcplog": {
           "type": "boolean",
           "x-display-name": "TCP Log"
+        },
+        "tunnel_timeout": {
+          "type": "integer",
+          "x-nullable": true
         },
         "unique_id_format": {
           "type": "string",
@@ -8479,7 +12105,7 @@ func init() {
       },
       "additionalProperties": false,
       "example": {
-        "id": 0,
+        "index": 0,
         "trace_name": "name",
         "trace_rnd_parsing": true,
         "type": "trace"
@@ -8687,6 +12313,12 @@ func init() {
             "tcp"
           ]
         },
+        "monitor_fail": {
+          "$ref": "#/definitions/monitor_fail"
+        },
+        "monitor_uri": {
+          "$ref": "#/definitions/monitor_uri"
+        },
         "name": {
           "type": "string",
           "pattern": "^[A-Za-z0-9-_.:]+$",
@@ -8783,6 +12415,26 @@ func init() {
           "type": "string",
           "pattern": "^[^\\s]+$",
           "x-display-name": "Group"
+        },
+        "log_send_hostname": {
+          "type": "object",
+          "required": [
+            "enabled"
+          ],
+          "properties": {
+            "enabled": {
+              "type": "string",
+              "enum": [
+                "enabled",
+                "disabled"
+              ]
+            },
+            "param": {
+              "type": "string",
+              "pattern": "^[^\\s]+$"
+            }
+          },
+          "x-display-name": "Log Send Hostname"
         },
         "lua_loads": {
           "type": "array",
@@ -8881,6 +12533,14 @@ func init() {
         "ssl_default_server_options": {
           "type": "string",
           "x-display-name": "SSL Default Server Options"
+        },
+        "ssl_mode_async": {
+          "type": "string",
+          "enum": [
+            "enabled",
+            "disabled"
+          ],
+          "x-display-name": "Asynchronous TLS I/O operations"
         },
         "stats_timeout": {
           "type": "integer",
@@ -9086,7 +12746,7 @@ func init() {
               ]
             }
           },
-          "x-nullable": false
+          "x-nullable": true
         },
         "expr": {
           "type": "string",
@@ -9108,7 +12768,6 @@ func init() {
         },
         "hdr_format": {
           "type": "string",
-          "pattern": "^[^\\s]+$",
           "x-dependency": {
             "type": {
               "required": true,
@@ -9124,7 +12783,6 @@ func init() {
         },
         "hdr_match": {
           "type": "string",
-          "pattern": "^[^\\s]+$",
           "x-dependency": {
             "type": {
               "required": true,
@@ -9138,7 +12796,6 @@ func init() {
         },
         "hdr_name": {
           "type": "string",
-          "pattern": "^[^\\s]+$",
           "x-dependency": {
             "type": {
               "required": true,
@@ -9343,14 +13000,17 @@ func init() {
           "enum": [
             301,
             302,
-            303
+            303,
+            307,
+            308
           ],
           "x-dependency": {
             "type": {
               "value": "redirect"
             }
           },
-          "x-display-name": "Redirect Code"
+          "x-display-name": "Redirect Code",
+          "x-nullable": true
         },
         "redir_option": {
           "type": "string",
@@ -9398,6 +13058,90 @@ func init() {
           },
           "x-display-name": "Resolvers"
         },
+        "return_content": {
+          "type": "string",
+          "x-dependency": {
+            "return_content_format": {
+              "required": true,
+              "value": [
+                "errofile",
+                "errorfiles",
+                "file",
+                "lf-file",
+                "string",
+                "lf-string"
+              ]
+            }
+          }
+        },
+        "return_content_format": {
+          "type": "string",
+          "enum": [
+            "default-errorfile",
+            "errorfile",
+            "errorfiles",
+            "file",
+            "lf-file",
+            "string",
+            "lf-string"
+          ],
+          "x-dependency": {
+            "type": {
+              "value": "return"
+            }
+          }
+        },
+        "return_content_type": {
+          "type": "string",
+          "x-dependency": {
+            "type": {
+              "value": "return"
+            }
+          },
+          "x-display-name": "Return content type",
+          "x-nullable": true
+        },
+        "return_hdrs": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "name",
+              "fmt"
+            ],
+            "properties": {
+              "fmt": {
+                "type": "string"
+              },
+              "name": {
+                "type": "string"
+              }
+            }
+          },
+          "x-dependency": {
+            "return_content_format": {
+              "value": [
+                "file",
+                "lf-file",
+                "string",
+                "lf-string"
+              ]
+            }
+          },
+          "x-go-name": "ReturnHeaders"
+        },
+        "return_status_code": {
+          "type": "integer",
+          "maximum": 599,
+          "minimum": 200,
+          "x-dependency": {
+            "type": {
+              "value": "return"
+            }
+          },
+          "x-display-name": "Return Error Code",
+          "x-nullable": true
+        },
         "sc_expr": {
           "type": "string",
           "x-dependency": {
@@ -9431,6 +13175,15 @@ func init() {
           },
           "x-display-name": "ScSet Integer Value",
           "x-nullable": true
+        },
+        "service_name": {
+          "type": "string",
+          "x-dependency": {
+            "type": {
+              "required": true,
+              "value": "use-service"
+            }
+          }
         },
         "spoe_engine": {
           "type": "string",
@@ -9591,7 +13344,9 @@ func init() {
             "silent-drop",
             "unset-var",
             "strict-mode",
-            "lua"
+            "lua",
+            "use-service",
+            "return"
           ],
           "x-nullable": false
         },
@@ -9660,7 +13415,7 @@ func init() {
         "cond_test": "{ src 192.168.0.0/16 }",
         "hdr_format": "%T",
         "hdr_name": "X-Haproxy-Current-Date",
-        "id": 0,
+        "index": 0,
         "type": "add-header"
       }
     },
@@ -9754,7 +13509,6 @@ func init() {
         },
         "hdr_format": {
           "type": "string",
-          "pattern": "^[^\\s]+$",
           "x-dependency": {
             "type": {
               "required": true,
@@ -9770,7 +13524,6 @@ func init() {
         },
         "hdr_match": {
           "type": "string",
-          "pattern": "^[^\\s]+$",
           "x-dependency": {
             "type": {
               "required": true,
@@ -9784,7 +13537,6 @@ func init() {
         },
         "hdr_name": {
           "type": "string",
-          "pattern": "^[^\\s]+$",
           "x-dependency": {
             "type": {
               "required": true,
@@ -9908,14 +13660,17 @@ func init() {
           "enum": [
             301,
             302,
-            303
+            303,
+            307,
+            308
           ],
           "x-dependency": {
             "type": {
               "value": "redirect"
             }
           },
-          "x-display-name": "Redirect Code"
+          "x-display-name": "Redirect Code",
+          "x-nullable": true
         },
         "redir_option": {
           "type": "string",
@@ -10193,7 +13948,7 @@ func init() {
         "cond_test": "{ src 192.168.0.0/16 }",
         "hdr_format": "%T",
         "hdr_name": "X-Haproxy-Current-Date",
-        "id": 0,
+        "index": 0,
         "type": "add-header"
       }
     },
@@ -10205,7 +13960,7 @@ func init() {
         "$ref": "#/definitions/http_response_rule"
       }
     },
-    "httpchk": {
+    "httpchk_params": {
       "type": "object",
       "properties": {
         "method": {
@@ -10488,6 +14243,9 @@ func init() {
         },
         "id": {
           "type": "string"
+        },
+        "storage_name": {
+          "type": "string"
         }
       }
     },
@@ -10522,6 +14280,50 @@ func init() {
       "title": "Map Files Array",
       "items": {
         "$ref": "#/definitions/map"
+      }
+    },
+    "monitor_fail": {
+      "type": "object",
+      "required": [
+        "cond",
+        "cond_test"
+      ],
+      "properties": {
+        "cond": {
+          "type": "string",
+          "enum": [
+            "if",
+            "unless"
+          ],
+          "x-display-name": "Condition"
+        },
+        "cond_test": {
+          "type": "string",
+          "x-dependency": {
+            "cond": {
+              "required": true
+            }
+          },
+          "x-display-name": "Condition Test"
+        }
+      }
+    },
+    "monitor_uri": {
+      "type": "string"
+    },
+    "mysql_check_params": {
+      "type": "object",
+      "properties": {
+        "client_version": {
+          "type": "string",
+          "enum": [
+            "pre-41",
+            "post-41"
+          ]
+        },
+        "username": {
+          "type": "string"
+        }
       }
     },
     "nameserver": {
@@ -11319,6 +15121,14 @@ func init() {
         "$ref": "#/definitions/peer_section"
       }
     },
+    "pgsql_check_params": {
+      "type": "object",
+      "properties": {
+        "username": {
+          "type": "string"
+        }
+      }
+    },
     "process_info": {
       "type": "object",
       "properties": {
@@ -11756,13 +15566,14 @@ func init() {
         "port": {
           "type": "integer",
           "maximum": 65535,
+          "minimum": 1,
           "x-nullable": true,
           "readOnly": true
         }
       },
       "example": {
         "address": "127.0.0.5",
-        "admin_state": "up",
+        "admin_state": "ready",
         "operational_state": "up",
         "port": 80,
         "server_id": 1,
@@ -11841,6 +15652,13 @@ func init() {
             "disabled"
           ]
         },
+        "check-send-proxy": {
+          "type": "string",
+          "enum": [
+            "enabled",
+            "disabled"
+          ]
+        },
         "check-sni": {
           "type": "string",
           "pattern": "^[^\\s]+$"
@@ -11852,17 +15670,102 @@ func init() {
             "disabled"
           ]
         },
+        "check_alpn": {
+          "type": "string",
+          "pattern": "^[^\\s]+$",
+          "x-display-name": "Protocols"
+        },
+        "check_proto": {
+          "type": "string",
+          "pattern": "^[^\\s]+$",
+          "x-display-name": "Name"
+        },
+        "check_via_socks4": {
+          "type": "string",
+          "enum": [
+            "enabled",
+            "disabled"
+          ]
+        },
+        "ciphers": {
+          "type": "string",
+          "x-dependency": {
+            "ssl": {
+              "value": "enabled"
+            }
+          }
+        },
+        "ciphersuites": {
+          "type": "string",
+          "x-dependency": {
+            "ssl": {
+              "value": "enabled"
+            }
+          }
+        },
         "cookie": {
           "type": "string",
           "pattern": "^[^\\s]+$"
+        },
+        "crl_file": {
+          "type": "string",
+          "x-dependency": {
+            "ssl": {
+              "value": "enabled"
+            }
+          }
         },
         "downinter": {
           "type": "integer",
           "x-nullable": true
         },
+        "error_limit": {
+          "type": "integer",
+          "x-display-name": "Error count"
+        },
+        "fall": {
+          "type": "integer",
+          "x-display-name": "Nr. of consecutive failed checks",
+          "x-nullable": true
+        },
         "fastinter": {
           "type": "integer",
           "x-nullable": true
+        },
+        "force_sslv3": {
+          "type": "string",
+          "enum": [
+            "enabled",
+            "disabled"
+          ]
+        },
+        "force_tlsv10": {
+          "type": "string",
+          "enum": [
+            "enabled",
+            "disabled"
+          ]
+        },
+        "force_tlsv11": {
+          "type": "string",
+          "enum": [
+            "enabled",
+            "disabled"
+          ]
+        },
+        "force_tlsv12": {
+          "type": "string",
+          "enum": [
+            "enabled",
+            "disabled"
+          ]
+        },
+        "force_tlsv13": {
+          "type": "string",
+          "enum": [
+            "enabled",
+            "disabled"
+          ]
         },
         "health_check_port": {
           "type": "integer",
@@ -11870,13 +15773,25 @@ func init() {
           "minimum": 1,
           "x-nullable": true
         },
+        "id": {
+          "type": "integer",
+          "x-nullable": true
+        },
         "init-addr": {
           "type": "string",
-          "pattern": "^[^\\s]+$"
+          "pattern": "^[^\\s]+$",
+          "x-nullable": true
         },
         "inter": {
           "type": "integer",
           "x-nullable": true
+        },
+        "log_proto": {
+          "type": "string",
+          "enum": [
+            "legacy",
+            "octet-count"
+          ]
         },
         "maintenance": {
           "type": "string",
@@ -11885,15 +15800,93 @@ func init() {
             "disabled"
           ]
         },
+        "max_reuse": {
+          "type": "integer",
+          "x-nullable": true
+        },
         "maxconn": {
           "type": "integer",
-          "x-display-name": "Max Connections",
+          "x-display-name": "Max Concurrent Connections",
+          "x-nullable": true
+        },
+        "maxqueue": {
+          "type": "integer",
+          "x-display-name": "Max Number of Connections",
+          "x-nullable": true
+        },
+        "minconn": {
+          "type": "integer",
           "x-nullable": true
         },
         "name": {
           "type": "string",
           "pattern": "^[^\\s]+$",
           "x-nullable": false
+        },
+        "namespace": {
+          "type": "string"
+        },
+        "no_sslv3": {
+          "type": "string",
+          "enum": [
+            "enabled",
+            "disabled"
+          ]
+        },
+        "no_tlsv10": {
+          "type": "string",
+          "enum": [
+            "enabled",
+            "disabled"
+          ]
+        },
+        "no_tlsv11": {
+          "type": "string",
+          "enum": [
+            "enabled",
+            "disabled"
+          ]
+        },
+        "no_tlsv12": {
+          "type": "string",
+          "enum": [
+            "enabled",
+            "disabled"
+          ]
+        },
+        "no_tlsv13": {
+          "type": "string",
+          "enum": [
+            "enabled",
+            "disabled"
+          ]
+        },
+        "no_verifyhost": {
+          "type": "string",
+          "enum": [
+            "enabled",
+            "disabled"
+          ]
+        },
+        "npn": {
+          "type": "string",
+          "x-dependency": {
+            "ssl": {
+              "value": "enabled"
+            }
+          }
+        },
+        "observe": {
+          "type": "string",
+          "enum": [
+            "layer4",
+            "layer7"
+          ],
+          "x-dependency": {
+            "ssl": {
+              "value": "enabled"
+            }
+          }
         },
         "on-error": {
           "type": "string",
@@ -11915,6 +15908,18 @@ func init() {
           "enum": [
             "shutdown-backup-sessions"
           ]
+        },
+        "pool_low_conn": {
+          "type": "integer",
+          "x-nullable": true
+        },
+        "pool_max_conn": {
+          "type": "integer",
+          "x-nullable": true
+        },
+        "pool_purge_delay": {
+          "type": "integer",
+          "x-nullable": true
         },
         "port": {
           "type": "integer",
@@ -11942,9 +15947,13 @@ func init() {
             ]
           }
         },
+        "redir": {
+          "type": "string",
+          "x-display-name": "Prefix"
+        },
         "resolve-net": {
           "type": "string",
-          "pattern": "^[^\\s]+$",
+          "pattern": "^[^,\\s][^\\,]*[^,\\s]*$",
           "x-dependency": {
             "resolvers": {
               "required": true
@@ -11953,12 +15962,19 @@ func init() {
         },
         "resolve-prefer": {
           "type": "string",
-          "pattern": "^[^\\s]+$",
+          "enum": [
+            "ipv4",
+            "ipv6"
+          ],
           "x-dependency": {
             "resolvers": {
               "required": true
             }
           }
+        },
+        "resolve_opts": {
+          "type": "string",
+          "pattern": "^[^,\\s][^\\,]*[^,\\s]*$"
         },
         "resolvers": {
           "type": "string",
@@ -11967,6 +15983,10 @@ func init() {
             "operation": "getResolvers",
             "property": "name"
           }
+        },
+        "rise": {
+          "type": "integer",
+          "x-nullable": true
         },
         "send-proxy": {
           "type": "string",
@@ -11982,6 +16002,20 @@ func init() {
             "disabled"
           ]
         },
+        "send_proxy_v2_ssl": {
+          "type": "string",
+          "enum": [
+            "enabled",
+            "disabled"
+          ]
+        },
+        "send_proxy_v2_ssl_cn": {
+          "type": "string",
+          "enum": [
+            "enabled",
+            "disabled"
+          ]
+        },
         "slowstart": {
           "type": "integer",
           "x-nullable": true
@@ -11989,6 +16023,18 @@ func init() {
         "sni": {
           "type": "string",
           "pattern": "^[^\\s]+$"
+        },
+        "socks4": {
+          "type": "string",
+          "pattern": "^[^\\s]+$",
+          "x-dependency": {
+            "check-via-socks4": {
+              "required": true
+            }
+          }
+        },
+        "source": {
+          "type": "string"
         },
         "ssl": {
           "type": "string",
@@ -12016,6 +16062,50 @@ func init() {
             }
           }
         },
+        "ssl_max_ver": {
+          "type": "string",
+          "enum": [
+            "SSLv3",
+            "TLSv1.0",
+            "TLSv1.1",
+            "TLSv1.2",
+            "TLSv1.3"
+          ]
+        },
+        "ssl_min_ver": {
+          "type": "string",
+          "enum": [
+            "SSLv3",
+            "TLSv1.0",
+            "TLSv1.1",
+            "TLSv1.2",
+            "TLSv1.3"
+          ]
+        },
+        "ssl_reuse": {
+          "type": "string",
+          "enum": [
+            "enabled",
+            "disabled"
+          ]
+        },
+        "stick": {
+          "type": "string",
+          "enum": [
+            "enabled",
+            "disabled"
+          ]
+        },
+        "tcp_ut": {
+          "type": "integer"
+        },
+        "tfo": {
+          "type": "string",
+          "enum": [
+            "enabled",
+            "disabled"
+          ]
+        },
         "tls_tickets": {
           "type": "string",
           "enum": [
@@ -12027,6 +16117,9 @@ func init() {
               "value": "enabled"
             }
           }
+        },
+        "track": {
+          "type": "string"
         },
         "verify": {
           "type": "string",
@@ -12040,6 +16133,17 @@ func init() {
             }
           }
         },
+        "verifyhost": {
+          "type": "string",
+          "x-dependency": {
+            "ssl": {
+              "value": "enabled"
+            },
+            "verify": {
+              "value": "required"
+            }
+          }
+        },
         "weight": {
           "type": "integer",
           "x-nullable": true
@@ -12049,7 +16153,6 @@ func init() {
       "example": {
         "address": "10.1.1.1",
         "check": "enabled",
-        "max-connections": 500,
         "name": "www",
         "port": 8080,
         "weight": 80
@@ -12104,7 +16207,7 @@ func init() {
       "example": {
         "cond": "if",
         "cond_test": "{ req_ssl_sni -i www.example.com }",
-        "id": 0,
+        "index": 0,
         "target_server": "www"
       }
     },
@@ -12300,6 +16403,406 @@ func init() {
         "$ref": "#/definitions/site"
       }
     },
+    "smtpchk_params": {
+      "type": "object",
+      "properties": {
+        "domain": {
+          "type": "string"
+        },
+        "hello": {
+          "type": "string"
+        }
+      }
+    },
+    "spoe_agent": {
+      "description": "SPOE agent configuration",
+      "type": "object",
+      "title": "SPOE agent",
+      "required": [
+        "name"
+      ],
+      "properties": {
+        "async": {
+          "type": "string",
+          "enum": [
+            "enabled",
+            "disabled"
+          ]
+        },
+        "continue-on-error": {
+          "type": "string",
+          "enum": [
+            "enabled"
+          ]
+        },
+        "dontlog-normal": {
+          "type": "string",
+          "enum": [
+            "enabled",
+            "disabled"
+          ]
+        },
+        "engine-name": {
+          "type": "string"
+        },
+        "force-set-var": {
+          "type": "string",
+          "enum": [
+            "enabled"
+          ]
+        },
+        "groups": {
+          "type": "string"
+        },
+        "hello_timeout": {
+          "type": "integer"
+        },
+        "idle_timeout": {
+          "type": "integer"
+        },
+        "log": {
+          "$ref": "#/definitions/log_targets"
+        },
+        "max-frame-size": {
+          "type": "integer"
+        },
+        "max-waiting-frames": {
+          "type": "integer"
+        },
+        "maxconnrate": {
+          "type": "integer"
+        },
+        "maxerrrate": {
+          "type": "integer"
+        },
+        "messages": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "option_set-on-error": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9-_.]+$"
+        },
+        "option_set-process-time": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9-_.]+$"
+        },
+        "option_set-total-time": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9-_.]+$"
+        },
+        "option_var-prefix": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9-_.]+$"
+        },
+        "pipelining": {
+          "type": "string",
+          "enum": [
+            "enabled",
+            "disabled"
+          ]
+        },
+        "processing_timeout": {
+          "type": "integer"
+        },
+        "register-var-names": {
+          "type": "string"
+        },
+        "send-frag-payload": {
+          "type": "string",
+          "enum": [
+            "enabled",
+            "disabled"
+          ]
+        },
+        "use-backend": {
+          "type": "string"
+        }
+      }
+    },
+    "spoe_agents": {
+      "description": "SPOE Agents of one scope in SPOE file",
+      "type": "array",
+      "title": "SPOE Agents",
+      "items": {
+        "$ref": "#/definitions/spoe_agent"
+      }
+    },
+    "spoe_files": {
+      "description": "SPOE files",
+      "type": "array",
+      "title": "SPOE files",
+      "items": {
+        "type": "string"
+      }
+    },
+    "spoe_group": {
+      "description": "SPOE group section configuration",
+      "type": "object",
+      "title": "SPOE group",
+      "required": [
+        "name"
+      ],
+      "properties": {
+        "messages": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        }
+      }
+    },
+    "spoe_groups": {
+      "description": "SPOE Groups of one scope in SPOE file",
+      "type": "array",
+      "title": "SPOE Groups",
+      "items": {
+        "$ref": "#/definitions/spoe_group"
+      }
+    },
+    "spoe_message": {
+      "description": "SPOE message section configuration",
+      "type": "object",
+      "title": "SPOE message",
+      "required": [
+        "name"
+      ],
+      "properties": {
+        "acl": {
+          "$ref": "#/definitions/acls"
+        },
+        "args": {
+          "type": "string"
+        },
+        "event": {
+          "type": "object",
+          "required": [
+            "name"
+          ],
+          "properties": {
+            "cond": {
+              "type": "string",
+              "enum": [
+                "if",
+                "unless"
+              ],
+              "x-display-name": "Condition"
+            },
+            "cond_test": {
+              "type": "string",
+              "x-dependency": {
+                "cond": {
+                  "required": true
+                }
+              },
+              "x-display-name": "Condition Test"
+            },
+            "name": {
+              "type": "string",
+              "enum": [
+                "on-client-session",
+                "on-server-session",
+                "on-frontend-tcp-request",
+                "on-backend-tcp-request",
+                "on-tcp-response",
+                "on-frontend-http-request",
+                "on-backend-http-request",
+                "on-http-response"
+              ]
+            }
+          }
+        },
+        "name": {
+          "type": "string"
+        }
+      }
+    },
+    "spoe_messages": {
+      "description": "SPOE Messages of one scope in SPOE file",
+      "type": "array",
+      "title": "SPOE Messages",
+      "items": {
+        "$ref": "#/definitions/spoe_message"
+      }
+    },
+    "spoe_scope": {
+      "description": "SPOE scope name",
+      "type": "string",
+      "title": "SPOE scope"
+    },
+    "spoe_scopes": {
+      "description": "All SPOE Scopes",
+      "type": "array",
+      "title": "SPOE Scopes",
+      "items": {
+        "$ref": "#/definitions/spoe_scope"
+      }
+    },
+    "spoe_transaction": {
+      "description": "SPOE configuration transaction",
+      "type": "object",
+      "title": "SPOE configuration transaction",
+      "properties": {
+        "_version": {
+          "type": "integer"
+        },
+        "id": {
+          "type": "string",
+          "pattern": "^[^\\s]+$"
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "failed",
+            "in_progress",
+            "success"
+          ]
+        }
+      },
+      "example": {
+        "_version": 2,
+        "id": "273e3385-2d0c-4fb1-aa27-93cbb31ff203",
+        "status": "in_progress"
+      }
+    },
+    "spoe_transactions": {
+      "description": "SPOE Configuration transactions array",
+      "type": "array",
+      "title": "SPOE Transactions array",
+      "items": {
+        "$ref": "#/definitions/spoe_transaction"
+      }
+    },
+    "ssl_cert_entries": {
+      "description": "Array of entries of runtime SSL Certificate Entry",
+      "type": "array",
+      "title": "SSL Certificate Entries",
+      "items": {
+        "$ref": "#/definitions/ssl_cert_entry"
+      }
+    },
+    "ssl_cert_entry": {
+      "description": "One SSL/TLS certificate",
+      "type": "object",
+      "title": "One SSL Certificate Entry",
+      "properties": {
+        "algorithm": {
+          "type": "string"
+        },
+        "chain_issuer": {
+          "type": "string"
+        },
+        "chain_subject": {
+          "type": "string"
+        },
+        "issuer": {
+          "type": "string"
+        },
+        "not_after": {
+          "type": "string",
+          "format": "date"
+        },
+        "not_before": {
+          "type": "string",
+          "format": "date"
+        },
+        "serial": {
+          "type": "string"
+        },
+        "sha1_finger_print": {
+          "type": "string"
+        },
+        "status": {
+          "type": "string"
+        },
+        "storage_name": {
+          "type": "string"
+        },
+        "subject": {
+          "type": "string"
+        },
+        "subject_alternative_names": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "ssl_certificate": {
+      "description": "A file containing one or more SSL/TLS certificates and keys",
+      "type": "object",
+      "title": "SSL File",
+      "properties": {
+        "description": {
+          "type": "string"
+        },
+        "file": {
+          "type": "string"
+        },
+        "storage_name": {
+          "type": "string"
+        }
+      }
+    },
+    "ssl_certificates": {
+      "description": "Array of ssl certificate files",
+      "type": "array",
+      "title": "SSL Files Array",
+      "items": {
+        "$ref": "#/definitions/ssl_certificate"
+      }
+    },
+    "ssl_crt_list": {
+      "description": "One SSL/TLS certificate",
+      "type": "object",
+      "title": "crt-list",
+      "properties": {
+        "file": {
+          "type": "string"
+        }
+      }
+    },
+    "ssl_crt_list_entries": {
+      "description": "Array of entries of runtime SSL Certificate Entry",
+      "type": "array",
+      "title": "SSL Certificate Entries",
+      "items": {
+        "$ref": "#/definitions/ssl_crt_list_entry"
+      }
+    },
+    "ssl_crt_list_entry": {
+      "description": "One SSL/TLS certificate",
+      "type": "object",
+      "title": "One crt-list Entry",
+      "properties": {
+        "file": {
+          "type": "string"
+        },
+        "line_number": {
+          "type": "string"
+        },
+        "sni_filters": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "ssl_bind_config": {
+          "type": "string"
+        }
+      }
+    },
+    "ssl_crt_lists": {
+      "description": "Array of entries of runtime crt-list",
+      "type": "array",
+      "title": "SSL crt-list",
+      "items": {
+        "$ref": "#/definitions/ssl_crt_list"
+      }
+    },
     "stats_options": {
       "type": "object",
       "properties": {
@@ -12396,9 +16899,9 @@ func init() {
       },
       "additionalProperties": false,
       "example": {
-        "id": 0,
+        "index": 0,
         "pattern": "src",
-        "type": "storeonly"
+        "type": "match"
       }
     },
     "stick_rules": {
@@ -12427,6 +16930,7 @@ func init() {
                   "gpc0_rate",
                   "gpc1",
                   "gpc1_rate",
+                  "gpt0",
                   "conn_cnt",
                   "conn_cur",
                   "conn_rate",
@@ -12547,6 +17051,10 @@ func init() {
           "x-nullable": true
         },
         "gpc1_rate": {
+          "type": "integer",
+          "x-nullable": true
+        },
+        "gpt0": {
           "type": "integer",
           "x-nullable": true
         },
@@ -13040,8 +17548,8 @@ func init() {
       "example": {
         "cond": "if",
         "cond_test": "{ src 192.168.0.0/16 }",
-        "id": 0,
-        "type": "accept"
+        "index": 0,
+        "type": "connection"
       }
     },
     "tcp_request_rules": {
@@ -13159,8 +17667,8 @@ func init() {
       "example": {
         "cond": "if",
         "cond_test": "{ src 192.168.0.0/16 }",
-        "id": 0,
-        "type": "accept"
+        "index": 0,
+        "type": "content"
       }
     },
     "tcp_response_rules": {
@@ -13187,6 +17695,7 @@ func init() {
           "type": "string",
           "enum": [
             "failed",
+            "outdated",
             "in_progress",
             "success"
           ]
@@ -13213,6 +17722,13 @@ func init() {
       "default": false,
       "description": "If set, do a force reload, do not wait for the configured reload-delay. Cannot be used when transaction is specified, as changes in transaction are not applied directly to configuration.",
       "name": "force_reload",
+      "in": "query"
+    },
+    "skip_reload": {
+      "type": "boolean",
+      "default": false,
+      "description": "If set, no reload will be initiated after update",
+      "name": "skip_reload",
       "in": "query"
     },
     "transaction_id": {
@@ -13270,6 +17786,19 @@ func init() {
         }
       }
     },
+    "NotAcceptable": {
+      "description": "The specified resource cannot be handled",
+      "schema": {
+        "$ref": "#/definitions/error"
+      },
+      "headers": {
+        "Configuration-Version": {
+          "type": "integer",
+          "default": 0,
+          "description": "Configuration file version"
+        }
+      }
+    },
     "NotFound": {
       "description": "The specified resource was not found",
       "schema": {
@@ -13296,61 +17825,44 @@ func init() {
   ],
   "tags": [
     {
-      "description": "API autodiscover endpoints",
-      "name": "Discovery"
-    },
-    {
-      "name": "Information"
-    },
-    {
-      "name": "Specification"
-    },
-    {
-      "description": "Managing transactions. Configuration changes can be grouped in the transaction. You start the\ntransaction with trasactions POST, and call the configuration changes you need with parameter\ntransaction_id. When you want to commit the transaction, you call the transactions PUT and all changes\nin that transaction is commited. If you call a configuration change without the transaction_id,\ntransaction mechanism is implicitly called with one operation in transaction.\n",
-      "name": "Transactions"
-    },
-    {
-      "description": "Checking reload success. To avoid constant reloading we reload in intervals that are configurable when\nwith reload-delay option. When a change to configuration is made and force_reload url query string\nparameter is false we issue a request for reload, and return the reload ID in response header. You can\nthen use reloads endpoints to check the status of that reload ID. If force_reload is true, we override all\nof this and reload immediately.\n",
-      "name": "Reloads"
-    },
-    {
-      "description": "Managing sites (simple configuration mode). Sites are considered as one frontend with multiple backends\nconnected to it via default_backend or use-backend directives.\n",
-      "name": "Sites"
-    },
-    {
-      "description": "Stats container",
-      "name": "Stats"
-    },
-    {
-      "description": "Managing global configuration (advanced mode)",
-      "name": "Global"
-    },
-    {
-      "description": "Managing defaults configuration (advanced mode)",
-      "name": "Defaults"
-    },
-    {
-      "description": "Managing frontend configuration (advanced mode)",
-      "name": "Frontend"
+      "name": "ACL"
     },
     {
       "description": "Managing backend configurations (advanced mode)",
       "name": "Backend"
     },
     {
+      "name": "BackendSwitchingRule"
+    },
+    {
       "description": "Managing frontend bind configurations (advanced mode)",
       "name": "Bind"
     },
     {
-      "description": "Managing backend server configurations (advanced mode)",
-      "name": "Server"
+      "name": "Cluster"
     },
     {
       "description": "Raw HAProxy configuration management (advanced mode)",
       "name": "Configuration"
     },
     {
-      "name": "TCPRequestRule"
+      "description": "Managing defaults configuration (advanced mode)",
+      "name": "Defaults"
+    },
+    {
+      "description": "API autodiscover endpoints",
+      "name": "Discovery"
+    },
+    {
+      "name": "Filter"
+    },
+    {
+      "description": "Managing frontend configuration (advanced mode)",
+      "name": "Frontend"
+    },
+    {
+      "description": "Managing global configuration (advanced mode)",
+      "name": "Global"
     },
     {
       "name": "HTTPRequestRule"
@@ -13359,31 +17871,13 @@ func init() {
       "name": "HTTPResponseRule"
     },
     {
-      "name": "BackendSwitchingRule"
-    },
-    {
-      "name": "ServerSwitchingRule"
-    },
-    {
-      "name": "TCPResponseRule"
-    },
-    {
-      "name": "Filter"
-    },
-    {
-      "name": "StickRule"
-    },
-    {
-      "name": "StickTable"
+      "name": "Information"
     },
     {
       "name": "LogTarget"
     },
     {
-      "name": "ACL"
-    },
-    {
-      "name": "Resolver"
+      "name": "Maps"
     },
     {
       "name": "Nameserver"
@@ -13395,13 +17889,60 @@ func init() {
       "name": "PeerEntry"
     },
     {
-      "name": "Cluster"
+      "description": "Checking reload success. To avoid constant reloading we reload in intervals that are configurable when\nwith reload-delay option. When a change to configuration is made and force_reload url query string\nparameter is false we issue a request for reload, and return the reload ID in response header. You can\nthen use reloads endpoints to check the status of that reload ID. If force_reload is true, we override all\nof this and reload immediately.\n",
+      "name": "Reloads"
     },
     {
-      "name": "Maps"
+      "name": "Resolver"
+    },
+    {
+      "description": "Managing backend server configurations (advanced mode)",
+      "name": "Server"
+    },
+    {
+      "name": "ServerSwitchingRule"
+    },
+    {
+      "name": "ServiceDiscovery"
+    },
+    {
+      "description": "Managing sites (simple configuration mode). Sites are considered as one frontend with multiple backends\nconnected to it via default_backend or use-backend directives.\n",
+      "name": "Sites"
+    },
+    {
+      "name": "Specification"
     },
     {
       "name": "SpecificationOpenapiv3"
+    },
+    {
+      "name": "Spoe"
+    },
+    {
+      "name": "SpoeTransactions"
+    },
+    {
+      "description": "Stats container",
+      "name": "Stats"
+    },
+    {
+      "name": "StickRule"
+    },
+    {
+      "name": "StickTable"
+    },
+    {
+      "name": "Storage"
+    },
+    {
+      "name": "TCPRequestRule"
+    },
+    {
+      "name": "TCPResponseRule"
+    },
+    {
+      "description": "Managing transactions. Configuration changes can be grouped in the transaction. You start the\ntransaction with trasactions POST, and call the configuration changes you need with parameter\ntransaction_id. When you want to commit the transaction, you call the transactions PUT and all changes\nin that transaction is commited. If you call a configuration change without the transaction_id,\ntransaction mechanism is implicitly called with one operation in transaction.\n",
+      "name": "Transactions"
     }
   ],
   "externalDocs": {
@@ -13525,6 +18066,20 @@ func init() {
             "in": "query"
           },
           {
+            "type": "string",
+            "description": "Force the advertised address when joining a cluster",
+            "name": "advertised_address",
+            "in": "query"
+          },
+          {
+            "maximum": 65535,
+            "minimum": 1,
+            "type": "integer",
+            "description": "Force the advertised port when joining a cluster",
+            "name": "advertised_port",
+            "in": "query"
+          },
+          {
             "type": "integer",
             "x-nullable": false,
             "description": "Version used for checking configuration version. Cannot be used when transaction is specified, transaction has it's own version.",
@@ -13615,6 +18170,570 @@ func init() {
             "description": "Success",
             "schema": {
               "$ref": "#/definitions/info"
+            }
+          },
+          "default": {
+            "description": "General Error",
+            "schema": {
+              "$ref": "#/definitions/error"
+            },
+            "headers": {
+              "Configuration-Version": {
+                "type": "integer",
+                "default": 0,
+                "description": "Configuration file version"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/service_discovery/aws": {
+      "get": {
+        "description": "Return all configured AWS regions.",
+        "tags": [
+          "ServiceDiscovery"
+        ],
+        "summary": "Return an array of all configured AWS regions",
+        "operationId": "getAWSRegions",
+        "responses": {
+          "200": {
+            "description": "Successful operation",
+            "schema": {
+              "type": "object",
+              "required": [
+                "data"
+              ],
+              "properties": {
+                "data": {
+                  "$ref": "#/definitions/awsRegions"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "General Error",
+            "schema": {
+              "$ref": "#/definitions/error"
+            },
+            "headers": {
+              "Configuration-Version": {
+                "type": "integer",
+                "default": 0,
+                "description": "Configuration file version"
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "description": "Add a new AWS region.\nCredentials are not required in case Dataplane API is running in an EC2 instance with proper IAM role attached.",
+        "tags": [
+          "ServiceDiscovery"
+        ],
+        "summary": "Add a new AWS region",
+        "operationId": "createAWSRegion",
+        "parameters": [
+          {
+            "name": "data",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/awsRegion"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Resource created",
+            "schema": {
+              "$ref": "#/definitions/awsRegion"
+            }
+          },
+          "400": {
+            "description": "Bad request",
+            "schema": {
+              "$ref": "#/definitions/error"
+            },
+            "headers": {
+              "Configuration-Version": {
+                "type": "integer",
+                "default": 0,
+                "description": "Configuration file version"
+              }
+            }
+          },
+          "409": {
+            "description": "The specified resource already exists",
+            "schema": {
+              "$ref": "#/definitions/error"
+            },
+            "headers": {
+              "Configuration-Version": {
+                "type": "integer",
+                "default": 0,
+                "description": "Configuration file version"
+              }
+            }
+          },
+          "default": {
+            "description": "General Error",
+            "schema": {
+              "$ref": "#/definitions/error"
+            },
+            "headers": {
+              "Configuration-Version": {
+                "type": "integer",
+                "default": 0,
+                "description": "Configuration file version"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/service_discovery/aws/{id}": {
+      "get": {
+        "description": "Return one AWS Region configuration by it's id.",
+        "tags": [
+          "ServiceDiscovery"
+        ],
+        "summary": "Return an AWS region",
+        "operationId": "getAWSRegion",
+        "parameters": [
+          {
+            "type": "string",
+            "description": "AWS region id",
+            "name": "id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful operation",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "data": {
+                  "$ref": "#/definitions/awsRegion"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The specified resource was not found",
+            "schema": {
+              "$ref": "#/definitions/error"
+            },
+            "headers": {
+              "Configuration-Version": {
+                "type": "integer",
+                "default": 0,
+                "description": "Configuration file version"
+              }
+            }
+          },
+          "default": {
+            "description": "General Error",
+            "schema": {
+              "$ref": "#/definitions/error"
+            },
+            "headers": {
+              "Configuration-Version": {
+                "type": "integer",
+                "default": 0,
+                "description": "Configuration file version"
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "description": "Replace an AWS region configuration by its id.",
+        "tags": [
+          "ServiceDiscovery"
+        ],
+        "summary": "Replace an AWS region",
+        "operationId": "replaceAWSRegion",
+        "parameters": [
+          {
+            "type": "string",
+            "description": "AWS Region ID",
+            "name": "id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "name": "data",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/awsRegion"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Resource updated",
+            "schema": {
+              "$ref": "#/definitions/awsRegion"
+            }
+          },
+          "400": {
+            "description": "Bad request",
+            "schema": {
+              "$ref": "#/definitions/error"
+            },
+            "headers": {
+              "Configuration-Version": {
+                "type": "integer",
+                "default": 0,
+                "description": "Configuration file version"
+              }
+            }
+          },
+          "404": {
+            "description": "The specified resource was not found",
+            "schema": {
+              "$ref": "#/definitions/error"
+            },
+            "headers": {
+              "Configuration-Version": {
+                "type": "integer",
+                "default": 0,
+                "description": "Configuration file version"
+              }
+            }
+          },
+          "default": {
+            "description": "General Error",
+            "schema": {
+              "$ref": "#/definitions/error"
+            },
+            "headers": {
+              "Configuration-Version": {
+                "type": "integer",
+                "default": 0,
+                "description": "Configuration file version"
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "description": "Delete an AWS region configuration by it's id.",
+        "tags": [
+          "ServiceDiscovery"
+        ],
+        "summary": "Delete an AWS region",
+        "operationId": "deleteAWSRegion",
+        "parameters": [
+          {
+            "type": "string",
+            "description": "AWS region ID",
+            "name": "id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Resource deleted"
+          },
+          "404": {
+            "description": "The specified resource was not found",
+            "schema": {
+              "$ref": "#/definitions/error"
+            },
+            "headers": {
+              "Configuration-Version": {
+                "type": "integer",
+                "default": 0,
+                "description": "Configuration file version"
+              }
+            }
+          },
+          "default": {
+            "description": "General Error",
+            "schema": {
+              "$ref": "#/definitions/error"
+            },
+            "headers": {
+              "Configuration-Version": {
+                "type": "integer",
+                "default": 0,
+                "description": "Configuration file version"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/service_discovery/consul": {
+      "get": {
+        "description": "Returns all configured Consul servers.",
+        "tags": [
+          "ServiceDiscovery"
+        ],
+        "summary": "Return an array of all configured Consul servers",
+        "operationId": "getConsuls",
+        "responses": {
+          "200": {
+            "description": "Successful operation",
+            "schema": {
+              "type": "object",
+              "required": [
+                "data"
+              ],
+              "properties": {
+                "data": {
+                  "$ref": "#/definitions/consuls"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "General Error",
+            "schema": {
+              "$ref": "#/definitions/error"
+            },
+            "headers": {
+              "Configuration-Version": {
+                "type": "integer",
+                "default": 0,
+                "description": "Configuration file version"
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "description": "Adds a new Consul server.",
+        "tags": [
+          "ServiceDiscovery"
+        ],
+        "summary": "Add a new Consul server",
+        "operationId": "createConsul",
+        "parameters": [
+          {
+            "name": "data",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/consul"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Consul created",
+            "schema": {
+              "$ref": "#/definitions/consul"
+            }
+          },
+          "400": {
+            "description": "Bad request",
+            "schema": {
+              "$ref": "#/definitions/error"
+            },
+            "headers": {
+              "Configuration-Version": {
+                "type": "integer",
+                "default": 0,
+                "description": "Configuration file version"
+              }
+            }
+          },
+          "409": {
+            "description": "The specified resource already exists",
+            "schema": {
+              "$ref": "#/definitions/error"
+            },
+            "headers": {
+              "Configuration-Version": {
+                "type": "integer",
+                "default": 0,
+                "description": "Configuration file version"
+              }
+            }
+          },
+          "default": {
+            "description": "General Error",
+            "schema": {
+              "$ref": "#/definitions/error"
+            },
+            "headers": {
+              "Configuration-Version": {
+                "type": "integer",
+                "default": 0,
+                "description": "Configuration file version"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/service_discovery/consul/{id}": {
+      "get": {
+        "description": "Returns one Consul server configuration by it's id.",
+        "tags": [
+          "ServiceDiscovery"
+        ],
+        "summary": "Return one Consul server",
+        "operationId": "getConsul",
+        "parameters": [
+          {
+            "type": "string",
+            "description": "Consul server id",
+            "name": "id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful operation",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "data": {
+                  "$ref": "#/definitions/consul"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The specified resource was not found",
+            "schema": {
+              "$ref": "#/definitions/error"
+            },
+            "headers": {
+              "Configuration-Version": {
+                "type": "integer",
+                "default": 0,
+                "description": "Configuration file version"
+              }
+            }
+          },
+          "default": {
+            "description": "General Error",
+            "schema": {
+              "$ref": "#/definitions/error"
+            },
+            "headers": {
+              "Configuration-Version": {
+                "type": "integer",
+                "default": 0,
+                "description": "Configuration file version"
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "description": "Replaces a Consul server configuration by it's id.",
+        "tags": [
+          "ServiceDiscovery"
+        ],
+        "summary": "Replace a Consul server",
+        "operationId": "replaceConsul",
+        "parameters": [
+          {
+            "type": "string",
+            "description": "Consul Index",
+            "name": "id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "name": "data",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/consul"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Consul server replaced",
+            "schema": {
+              "$ref": "#/definitions/consul"
+            }
+          },
+          "400": {
+            "description": "Bad request",
+            "schema": {
+              "$ref": "#/definitions/error"
+            },
+            "headers": {
+              "Configuration-Version": {
+                "type": "integer",
+                "default": 0,
+                "description": "Configuration file version"
+              }
+            }
+          },
+          "404": {
+            "description": "The specified resource was not found",
+            "schema": {
+              "$ref": "#/definitions/error"
+            },
+            "headers": {
+              "Configuration-Version": {
+                "type": "integer",
+                "default": 0,
+                "description": "Configuration file version"
+              }
+            }
+          },
+          "default": {
+            "description": "General Error",
+            "schema": {
+              "$ref": "#/definitions/error"
+            },
+            "headers": {
+              "Configuration-Version": {
+                "type": "integer",
+                "default": 0,
+                "description": "Configuration file version"
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "description": "Deletes a Consul server configuration by it's id.",
+        "tags": [
+          "ServiceDiscovery"
+        ],
+        "summary": "Delete a Consul server",
+        "operationId": "deleteConsul",
+        "parameters": [
+          {
+            "type": "string",
+            "description": "Consul server Index",
+            "name": "id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Consul server deleted"
+          },
+          "404": {
+            "description": "The specified resource was not found",
+            "schema": {
+              "$ref": "#/definitions/error"
+            },
+            "headers": {
+              "Configuration-Version": {
+                "type": "integer",
+                "default": 0,
+                "description": "Configuration file version"
+              }
             }
           },
           "default": {
@@ -13761,6 +18880,12 @@ func init() {
             "name": "parent_type",
             "in": "query",
             "required": true
+          },
+          {
+            "type": "string",
+            "description": "ACL name",
+            "name": "acl_name",
+            "in": "query"
           },
           {
             "type": "string",
@@ -15018,7 +20143,7 @@ func init() {
         }
       },
       "delete": {
-        "description": "Deletes a frontend from the configuration by it's name.",
+        "description": "Deletes a backend from the configuration by it's name.",
         "tags": [
           "Backend"
         ],
@@ -19545,6 +24670,13 @@ func init() {
             "in": "query"
           },
           {
+            "type": "boolean",
+            "default": false,
+            "description": "If set, only validates configuration, without applying it",
+            "name": "only_validate",
+            "in": "query"
+          },
+          {
             "type": "string",
             "description": "List of Runtime API commands with parameters separated by ';'",
             "name": "X-Runtime-Actions",
@@ -22315,6 +27447,59 @@ func init() {
         }
       }
     },
+    "/services/haproxy/configuration/version": {
+      "get": {
+        "description": "Returns configuration version.",
+        "tags": [
+          "Configuration"
+        ],
+        "summary": "Return a configuration version",
+        "operationId": "getConfigurationVersion",
+        "parameters": [
+          {
+            "type": "string",
+            "x-nullable": false,
+            "description": "ID of the transaction where we want to add the operation. Cannot be used when version is specified.",
+            "name": "transaction_id",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Configuration version",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          "404": {
+            "description": "The specified resource was not found",
+            "schema": {
+              "$ref": "#/definitions/error"
+            },
+            "headers": {
+              "Configuration-Version": {
+                "type": "integer",
+                "default": 0,
+                "description": "Configuration file version"
+              }
+            }
+          },
+          "default": {
+            "description": "General Error",
+            "schema": {
+              "$ref": "#/definitions/error"
+            },
+            "headers": {
+              "Configuration-Version": {
+                "type": "integer",
+                "default": 0,
+                "description": "Configuration file version"
+              }
+            }
+          }
+        }
+      }
+    },
     "/services/haproxy/reloads": {
       "get": {
         "description": "Returns a list of HAProxy reloads.",
@@ -22437,6 +27622,381 @@ func init() {
         }
       }
     },
+    "/services/haproxy/runtime/acl_file_entries": {
+      "get": {
+        "description": "Returns an ACL runtime setting using the runtime socket.",
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "ACL Runtime"
+        ],
+        "summary": "Return an ACL entries",
+        "parameters": [
+          {
+            "type": "string",
+            "description": "ACL ID",
+            "name": "acl_id",
+            "in": "query",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful operation",
+            "schema": {
+              "$ref": "#/definitions/acl_files_entries"
+            }
+          },
+          "400": {
+            "description": "Bad request",
+            "schema": {
+              "$ref": "#/definitions/error"
+            },
+            "headers": {
+              "Configuration-Version": {
+                "type": "integer",
+                "default": 0,
+                "description": "Configuration file version"
+              }
+            }
+          },
+          "404": {
+            "description": "The specified resource was not found",
+            "schema": {
+              "$ref": "#/definitions/error"
+            },
+            "headers": {
+              "Configuration-Version": {
+                "type": "integer",
+                "default": 0,
+                "description": "Configuration file version"
+              }
+            }
+          },
+          "default": {
+            "description": "General Error",
+            "schema": {
+              "$ref": "#/definitions/error"
+            },
+            "headers": {
+              "Configuration-Version": {
+                "type": "integer",
+                "default": 0,
+                "description": "Configuration file version"
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "description": "Adds an entry into the ACL file using the runtime socket.",
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "ACL Runtime"
+        ],
+        "summary": "Add entry to an ACL file",
+        "parameters": [
+          {
+            "type": "string",
+            "description": "ACL ID",
+            "name": "acl_id",
+            "in": "query",
+            "required": true
+          },
+          {
+            "name": "data",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/acl_file_entry"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "ACL entry created",
+            "schema": {
+              "$ref": "#/definitions/acl_file_entry"
+            }
+          },
+          "400": {
+            "description": "Bad request",
+            "schema": {
+              "$ref": "#/definitions/error"
+            },
+            "headers": {
+              "Configuration-Version": {
+                "type": "integer",
+                "default": 0,
+                "description": "Configuration file version"
+              }
+            }
+          },
+          "409": {
+            "description": "The specified resource already exists",
+            "schema": {
+              "$ref": "#/definitions/error"
+            },
+            "headers": {
+              "Configuration-Version": {
+                "type": "integer",
+                "default": 0,
+                "description": "Configuration file version"
+              }
+            }
+          },
+          "default": {
+            "description": "General Error",
+            "schema": {
+              "$ref": "#/definitions/error"
+            },
+            "headers": {
+              "Configuration-Version": {
+                "type": "integer",
+                "default": 0,
+                "description": "Configuration file version"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/services/haproxy/runtime/acl_file_entries/{id}": {
+      "get": {
+        "description": "Returns the ACL entry by its ID using the runtime socket.",
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "ACL Runtime"
+        ],
+        "summary": "Return an ACL entry",
+        "parameters": [
+          {
+            "type": "string",
+            "description": "ACL ID",
+            "name": "acl_id",
+            "in": "query",
+            "required": true
+          },
+          {
+            "type": "string",
+            "description": "File entry ID",
+            "name": "id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful operation",
+            "schema": {
+              "$ref": "#/definitions/acl_file_entry"
+            }
+          },
+          "400": {
+            "description": "Bad request",
+            "schema": {
+              "$ref": "#/definitions/error"
+            },
+            "headers": {
+              "Configuration-Version": {
+                "type": "integer",
+                "default": 0,
+                "description": "Configuration file version"
+              }
+            }
+          },
+          "404": {
+            "description": "The specified resource was not found",
+            "schema": {
+              "$ref": "#/definitions/error"
+            },
+            "headers": {
+              "Configuration-Version": {
+                "type": "integer",
+                "default": 0,
+                "description": "Configuration file version"
+              }
+            }
+          },
+          "default": {
+            "description": "General Error",
+            "schema": {
+              "$ref": "#/definitions/error"
+            },
+            "headers": {
+              "Configuration-Version": {
+                "type": "integer",
+                "default": 0,
+                "description": "Configuration file version"
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "description": "Deletes the entry from the ACL by its value using the runtime socket.",
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "ACL Runtime"
+        ],
+        "summary": "Delete an ACL entry",
+        "parameters": [
+          {
+            "type": "string",
+            "description": "ACL ID",
+            "name": "acl_id",
+            "in": "query",
+            "required": true
+          },
+          {
+            "type": "string",
+            "description": "File entry ID",
+            "name": "id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful operation"
+          },
+          "400": {
+            "description": "Bad request",
+            "schema": {
+              "$ref": "#/definitions/error"
+            },
+            "headers": {
+              "Configuration-Version": {
+                "type": "integer",
+                "default": 0,
+                "description": "Configuration file version"
+              }
+            }
+          },
+          "404": {
+            "description": "The specified resource was not found",
+            "schema": {
+              "$ref": "#/definitions/error"
+            },
+            "headers": {
+              "Configuration-Version": {
+                "type": "integer",
+                "default": 0,
+                "description": "Configuration file version"
+              }
+            }
+          },
+          "default": {
+            "description": "General Error",
+            "schema": {
+              "$ref": "#/definitions/error"
+            },
+            "headers": {
+              "Configuration-Version": {
+                "type": "integer",
+                "default": 0,
+                "description": "Configuration file version"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/services/haproxy/runtime/acls": {
+      "get": {
+        "description": "Returns all ACL files using the runtime socket.",
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "ACL Runtime"
+        ],
+        "summary": "Return an array of all ACL files",
+        "responses": {
+          "200": {
+            "description": "Successful operation",
+            "schema": {
+              "$ref": "#/definitions/acl_files"
+            }
+          },
+          "default": {
+            "description": "General Error",
+            "schema": {
+              "$ref": "#/definitions/error"
+            },
+            "headers": {
+              "Configuration-Version": {
+                "type": "integer",
+                "default": 0,
+                "description": "Configuration file version"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/services/haproxy/runtime/acls/{id}": {
+      "get": {
+        "description": "Returns an ACL file by id using the runtime socket.",
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "ACL Runtime"
+        ],
+        "summary": "Return an ACL file",
+        "parameters": [
+          {
+            "type": "string",
+            "description": "ACL file entry ID",
+            "name": "id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful operation",
+            "schema": {
+              "$ref": "#/definitions/acl_file"
+            }
+          },
+          "404": {
+            "description": "The specified resource was not found",
+            "schema": {
+              "$ref": "#/definitions/error"
+            },
+            "headers": {
+              "Configuration-Version": {
+                "type": "integer",
+                "default": 0,
+                "description": "Configuration file version"
+              }
+            }
+          },
+          "default": {
+            "description": "General Error",
+            "schema": {
+              "$ref": "#/definitions/error"
+            },
+            "headers": {
+              "Configuration-Version": {
+                "type": "integer",
+                "default": 0,
+                "description": "Configuration file version"
+              }
+            }
+          }
+        }
+      }
+    },
     "/services/haproxy/runtime/info": {
       "get": {
         "description": "Return HAProxy process information",
@@ -22473,12 +28033,21 @@ func init() {
     },
     "/services/haproxy/runtime/maps": {
       "get": {
-        "description": "Returns all available map files.",
+        "description": "Returns runtime map files.",
         "tags": [
           "Maps"
         ],
-        "summary": "Return all available map files",
+        "summary": "Return runtime map files",
         "operationId": "getAllRuntimeMapFiles",
+        "parameters": [
+          {
+            "type": "boolean",
+            "default": false,
+            "description": "If true, also show unmanaged map files loaded in haproxy",
+            "name": "include_unmanaged",
+            "in": "query"
+          }
+        ],
         "responses": {
           "200": {
             "description": "Successful operation",
@@ -22488,73 +28057,6 @@ func init() {
           },
           "404": {
             "description": "The specified resource was not found",
-            "schema": {
-              "$ref": "#/definitions/error"
-            },
-            "headers": {
-              "Configuration-Version": {
-                "type": "integer",
-                "default": 0,
-                "description": "Configuration file version"
-              }
-            }
-          },
-          "default": {
-            "description": "General Error",
-            "schema": {
-              "$ref": "#/definitions/error"
-            },
-            "headers": {
-              "Configuration-Version": {
-                "type": "integer",
-                "default": 0,
-                "description": "Configuration file version"
-              }
-            }
-          }
-        }
-      },
-      "post": {
-        "description": "Creates runtime map file with its entries.",
-        "consumes": [
-          "multipart/form-data"
-        ],
-        "tags": [
-          "Maps"
-        ],
-        "summary": "Creates runtime map file with its entries",
-        "operationId": "createRuntimeMap",
-        "parameters": [
-          {
-            "type": "file",
-            "x-mimetype": "text/plain",
-            "description": "The map file to upload",
-            "name": "fileUpload",
-            "in": "formData"
-          }
-        ],
-        "responses": {
-          "201": {
-            "description": "Map file created with its entries",
-            "schema": {
-              "$ref": "#/definitions/map_entries"
-            }
-          },
-          "400": {
-            "description": "Bad request",
-            "schema": {
-              "$ref": "#/definitions/error"
-            },
-            "headers": {
-              "Configuration-Version": {
-                "type": "integer",
-                "default": 0,
-                "description": "Configuration file version"
-              }
-            }
-          },
-          "409": {
-            "description": "The specified resource already exists",
             "schema": {
               "$ref": "#/definitions/error"
             },
@@ -22654,6 +28156,13 @@ func init() {
             "description": "If true, deletes file from disk",
             "name": "forceDelete",
             "in": "query"
+          },
+          {
+            "type": "boolean",
+            "default": false,
+            "description": "If true, immediately syncs changes to disk",
+            "name": "force_sync",
+            "in": "query"
           }
         ],
         "responses": {
@@ -22700,7 +28209,7 @@ func init() {
         "parameters": [
           {
             "type": "string",
-            "description": "Map file name",
+            "description": "Mapfile attribute storage_name",
             "name": "map",
             "in": "query",
             "required": true
@@ -22751,10 +28260,17 @@ func init() {
         "parameters": [
           {
             "type": "string",
-            "description": "Map file name",
+            "description": "Mapfile attribute storage_name",
             "name": "map",
             "in": "query",
             "required": true
+          },
+          {
+            "type": "boolean",
+            "default": false,
+            "description": "If true, immediately syncs changes to disk",
+            "name": "force_sync",
+            "in": "query"
           },
           {
             "name": "data",
@@ -22832,7 +28348,7 @@ func init() {
           },
           {
             "type": "string",
-            "description": "Map file name",
+            "description": "Mapfile attribute storage_name",
             "name": "map",
             "in": "query",
             "required": true
@@ -22890,10 +28406,17 @@ func init() {
           },
           {
             "type": "string",
-            "description": "Map file name",
+            "description": "Mapfile attribute storage_name",
             "name": "map",
             "in": "query",
             "required": true
+          },
+          {
+            "type": "boolean",
+            "default": false,
+            "description": "If true, immediately syncs changes to disk",
+            "name": "force_sync",
+            "in": "query"
           },
           {
             "name": "data",
@@ -22978,10 +28501,17 @@ func init() {
           },
           {
             "type": "string",
-            "description": "Map file name",
+            "description": "Mapfile attribute storage_name",
             "name": "map",
             "in": "query",
             "required": true
+          },
+          {
+            "type": "boolean",
+            "default": false,
+            "description": "If true, immediately syncs changes to disk",
+            "name": "force_sync",
+            "in": "query"
           }
         ],
         "responses": {
@@ -23023,7 +28553,7 @@ func init() {
         "tags": [
           "Server"
         ],
-        "summary": "Return an array of runtime servers' setings",
+        "summary": "Return an array of runtime servers' settings",
         "operationId": "getRuntimeServers",
         "parameters": [
           {
@@ -23778,6 +29308,2246 @@ func init() {
         }
       }
     },
+    "/services/haproxy/spoe": {
+      "get": {
+        "description": "Returns a list of endpoints to be used for SPOE settings of HAProxy.",
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "Discovery"
+        ],
+        "summary": "Return list of HAProxy SPOE endpoints",
+        "operationId": "getSpoeEndpoints",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "$ref": "#/definitions/endpoints"
+            }
+          },
+          "default": {
+            "description": "General Error",
+            "schema": {
+              "$ref": "#/definitions/error"
+            },
+            "headers": {
+              "Configuration-Version": {
+                "type": "integer",
+                "default": 0,
+                "description": "Configuration file version"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/services/haproxy/spoe/spoe_agents": {
+      "get": {
+        "description": "Returns an array of all configured spoe agents in one scope.",
+        "tags": [
+          "Spoe"
+        ],
+        "summary": "Return an array of spoe agents in one scope",
+        "operationId": "getSpoeAgents",
+        "parameters": [
+          {
+            "type": "string",
+            "description": "Spoe file name",
+            "name": "spoe",
+            "in": "query",
+            "required": true
+          },
+          {
+            "type": "string",
+            "description": "Spoe scope",
+            "name": "scope",
+            "in": "query",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-nullable": false,
+            "description": "ID of the transaction where we want to add the operation. Cannot be used when version is specified.",
+            "name": "transaction_id",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful operation",
+            "schema": {
+              "type": "object",
+              "required": [
+                "data"
+              ],
+              "properties": {
+                "_version": {
+                  "type": "integer"
+                },
+                "data": {
+                  "$ref": "#/definitions/spoe_agents"
+                }
+              }
+            },
+            "headers": {
+              "Configuration-Version": {
+                "type": "integer",
+                "description": "Spoe configuration file version"
+              }
+            }
+          },
+          "default": {
+            "description": "General Error",
+            "schema": {
+              "$ref": "#/definitions/error"
+            },
+            "headers": {
+              "Configuration-Version": {
+                "type": "integer",
+                "default": 0,
+                "description": "Configuration file version"
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "description": "Adds a new spoe agent to the spoe scope.",
+        "tags": [
+          "Spoe"
+        ],
+        "summary": "Add a new spoe agent to scope",
+        "operationId": "createSpoeAgent",
+        "parameters": [
+          {
+            "type": "string",
+            "description": "Spoe file name",
+            "name": "spoe",
+            "in": "query",
+            "required": true
+          },
+          {
+            "type": "string",
+            "description": "Spoe scope",
+            "name": "scope",
+            "in": "query",
+            "required": true
+          },
+          {
+            "name": "data",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/spoe_agent"
+            }
+          },
+          {
+            "type": "string",
+            "x-nullable": false,
+            "description": "ID of the transaction where we want to add the operation. Cannot be used when version is specified.",
+            "name": "transaction_id",
+            "in": "query"
+          },
+          {
+            "type": "integer",
+            "x-nullable": false,
+            "description": "Version used for checking configuration version. Cannot be used when transaction is specified, transaction has it's own version.",
+            "name": "version",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Spoe agent created",
+            "schema": {
+              "$ref": "#/definitions/spoe_agent"
+            }
+          },
+          "400": {
+            "description": "Bad request",
+            "schema": {
+              "$ref": "#/definitions/error"
+            },
+            "headers": {
+              "Configuration-Version": {
+                "type": "integer",
+                "default": 0,
+                "description": "Configuration file version"
+              }
+            }
+          },
+          "409": {
+            "description": "The specified resource already exists",
+            "schema": {
+              "$ref": "#/definitions/error"
+            },
+            "headers": {
+              "Configuration-Version": {
+                "type": "integer",
+                "default": 0,
+                "description": "Configuration file version"
+              }
+            }
+          },
+          "default": {
+            "description": "General Error",
+            "schema": {
+              "$ref": "#/definitions/error"
+            },
+            "headers": {
+              "Configuration-Version": {
+                "type": "integer",
+                "default": 0,
+                "description": "Configuration file version"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/services/haproxy/spoe/spoe_agents/{name}": {
+      "get": {
+        "description": "Returns one spoe agent configuration in one SPOE scope.",
+        "tags": [
+          "Spoe"
+        ],
+        "summary": "Return a spoe agent",
+        "operationId": "getSpoeAgent",
+        "parameters": [
+          {
+            "type": "string",
+            "description": "Spoe file name",
+            "name": "spoe",
+            "in": "query",
+            "required": true
+          },
+          {
+            "type": "string",
+            "description": "Spoe scope",
+            "name": "scope",
+            "in": "query",
+            "required": true
+          },
+          {
+            "type": "string",
+            "description": "Spoe agent name",
+            "name": "name",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-nullable": false,
+            "description": "ID of the transaction where we want to add the operation. Cannot be used when version is specified.",
+            "name": "transaction_id",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful operation",
+            "schema": {
+              "type": "object",
+              "required": [
+                "data"
+              ],
+              "properties": {
+                "_version": {
+                  "type": "integer"
+                },
+                "data": {
+                  "$ref": "#/definitions/spoe_agent"
+                }
+              }
+            },
+            "headers": {
+              "Configuration-Version": {
+                "type": "integer",
+                "description": "Spoe configuration file version"
+              }
+            }
+          },
+          "404": {
+            "description": "The specified resource was not found",
+            "schema": {
+              "$ref": "#/definitions/error"
+            },
+            "headers": {
+              "Configuration-Version": {
+                "type": "integer",
+                "default": 0,
+                "description": "Configuration file version"
+              }
+            }
+          },
+          "default": {
+            "description": "General Error",
+            "schema": {
+              "$ref": "#/definitions/error"
+            },
+            "headers": {
+              "Configuration-Version": {
+                "type": "integer",
+                "default": 0,
+                "description": "Configuration file version"
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "description": "Replaces a SPOE agent configuration in one SPOE scope.",
+        "tags": [
+          "Spoe"
+        ],
+        "summary": "Replace a SPOE agent",
+        "operationId": "replaceSpoeAgent",
+        "parameters": [
+          {
+            "type": "string",
+            "description": "Spoe file name",
+            "name": "spoe",
+            "in": "query",
+            "required": true
+          },
+          {
+            "type": "string",
+            "description": "Spoe scope",
+            "name": "scope",
+            "in": "query",
+            "required": true
+          },
+          {
+            "type": "string",
+            "description": "Spoe agent name",
+            "name": "name",
+            "in": "path",
+            "required": true
+          },
+          {
+            "name": "data",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/spoe_agent"
+            }
+          },
+          {
+            "type": "string",
+            "x-nullable": false,
+            "description": "ID of the transaction where we want to add the operation. Cannot be used when version is specified.",
+            "name": "transaction_id",
+            "in": "query"
+          },
+          {
+            "type": "integer",
+            "x-nullable": false,
+            "description": "Version used for checking configuration version. Cannot be used when transaction is specified, transaction has it's own version.",
+            "name": "version",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Spoe agent replaced",
+            "schema": {
+              "$ref": "#/definitions/spoe_agent"
+            }
+          },
+          "400": {
+            "description": "Bad request",
+            "schema": {
+              "$ref": "#/definitions/error"
+            },
+            "headers": {
+              "Configuration-Version": {
+                "type": "integer",
+                "default": 0,
+                "description": "Configuration file version"
+              }
+            }
+          },
+          "404": {
+            "description": "The specified resource was not found",
+            "schema": {
+              "$ref": "#/definitions/error"
+            },
+            "headers": {
+              "Configuration-Version": {
+                "type": "integer",
+                "default": 0,
+                "description": "Configuration file version"
+              }
+            }
+          },
+          "default": {
+            "description": "General Error",
+            "schema": {
+              "$ref": "#/definitions/error"
+            },
+            "headers": {
+              "Configuration-Version": {
+                "type": "integer",
+                "default": 0,
+                "description": "Configuration file version"
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "description": "Deletes a SPOE agent from the configuration in one SPOE scope.",
+        "tags": [
+          "Spoe"
+        ],
+        "summary": "Delete a SPOE agent",
+        "operationId": "deleteSpoeAgent",
+        "parameters": [
+          {
+            "type": "string",
+            "description": "Spoe file name",
+            "name": "spoe",
+            "in": "query",
+            "required": true
+          },
+          {
+            "type": "string",
+            "description": "Spoe scope",
+            "name": "scope",
+            "in": "query",
+            "required": true
+          },
+          {
+            "type": "string",
+            "description": "Spoe agent name",
+            "name": "name",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-nullable": false,
+            "description": "ID of the transaction where we want to add the operation. Cannot be used when version is specified.",
+            "name": "transaction_id",
+            "in": "query"
+          },
+          {
+            "type": "integer",
+            "x-nullable": false,
+            "description": "Version used for checking configuration version. Cannot be used when transaction is specified, transaction has it's own version.",
+            "name": "version",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Spoe agent deleted"
+          },
+          "404": {
+            "description": "The specified resource was not found",
+            "schema": {
+              "$ref": "#/definitions/error"
+            },
+            "headers": {
+              "Configuration-Version": {
+                "type": "integer",
+                "default": 0,
+                "description": "Configuration file version"
+              }
+            }
+          },
+          "default": {
+            "description": "General Error",
+            "schema": {
+              "$ref": "#/definitions/error"
+            },
+            "headers": {
+              "Configuration-Version": {
+                "type": "integer",
+                "default": 0,
+                "description": "Configuration file version"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/services/haproxy/spoe/spoe_files": {
+      "get": {
+        "description": "Returns all available SPOE files.",
+        "tags": [
+          "Spoe"
+        ],
+        "summary": "Return all available SPOE files",
+        "operationId": "getAllSpoeFiles",
+        "responses": {
+          "200": {
+            "description": "Successful operation",
+            "schema": {
+              "$ref": "#/definitions/spoe_files"
+            }
+          },
+          "404": {
+            "description": "The specified resource was not found",
+            "schema": {
+              "$ref": "#/definitions/error"
+            },
+            "headers": {
+              "Configuration-Version": {
+                "type": "integer",
+                "default": 0,
+                "description": "Configuration file version"
+              }
+            }
+          },
+          "default": {
+            "description": "General Error",
+            "schema": {
+              "$ref": "#/definitions/error"
+            },
+            "headers": {
+              "Configuration-Version": {
+                "type": "integer",
+                "default": 0,
+                "description": "Configuration file version"
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "description": "Creates SPOE file with its entries.",
+        "consumes": [
+          "multipart/form-data"
+        ],
+        "tags": [
+          "Spoe"
+        ],
+        "summary": "Creates SPOE file with its entries",
+        "operationId": "createSpoe",
+        "parameters": [
+          {
+            "type": "file",
+            "x-mimetype": "text/plain",
+            "description": "The spoe file to upload",
+            "name": "file_upload",
+            "in": "formData"
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "SPOE file created with its entries",
+            "schema": {
+              "type": "string"
+            }
+          },
+          "400": {
+            "description": "Bad request",
+            "schema": {
+              "$ref": "#/definitions/error"
+            },
+            "headers": {
+              "Configuration-Version": {
+                "type": "integer",
+                "default": 0,
+                "description": "Configuration file version"
+              }
+            }
+          },
+          "409": {
+            "description": "The specified resource already exists",
+            "schema": {
+              "$ref": "#/definitions/error"
+            },
+            "headers": {
+              "Configuration-Version": {
+                "type": "integer",
+                "default": 0,
+                "description": "Configuration file version"
+              }
+            }
+          },
+          "default": {
+            "description": "General Error",
+            "schema": {
+              "$ref": "#/definitions/error"
+            },
+            "headers": {
+              "Configuration-Version": {
+                "type": "integer",
+                "default": 0,
+                "description": "Configuration file version"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/services/haproxy/spoe/spoe_files/{name}": {
+      "get": {
+        "description": "Returns one SPOE file.",
+        "tags": [
+          "Spoe"
+        ],
+        "summary": "Return one SPOE file",
+        "operationId": "getOneSpoeFile",
+        "parameters": [
+          {
+            "type": "string",
+            "description": "SPOE file name",
+            "name": "name",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful operation",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "_version": {
+                  "type": "integer"
+                },
+                "data": {
+                  "type": "string"
+                }
+              }
+            },
+            "headers": {
+              "Configuration-Version": {
+                "type": "integer",
+                "description": "Spoe configuration file version"
+              }
+            }
+          },
+          "404": {
+            "description": "The specified resource was not found",
+            "schema": {
+              "$ref": "#/definitions/error"
+            },
+            "headers": {
+              "Configuration-Version": {
+                "type": "integer",
+                "default": 0,
+                "description": "Configuration file version"
+              }
+            }
+          },
+          "default": {
+            "description": "General Error",
+            "schema": {
+              "$ref": "#/definitions/error"
+            },
+            "headers": {
+              "Configuration-Version": {
+                "type": "integer",
+                "default": 0,
+                "description": "Configuration file version"
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "description": "Deletes SPOE file.",
+        "tags": [
+          "Spoe"
+        ],
+        "summary": "Delete SPOE file",
+        "operationId": "deleteSpoeFile",
+        "parameters": [
+          {
+            "type": "string",
+            "description": "SPOE file name",
+            "name": "name",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "SPOE file deleted"
+          },
+          "404": {
+            "description": "The specified resource was not found",
+            "schema": {
+              "$ref": "#/definitions/error"
+            },
+            "headers": {
+              "Configuration-Version": {
+                "type": "integer",
+                "default": 0,
+                "description": "Configuration file version"
+              }
+            }
+          },
+          "default": {
+            "description": "General Error",
+            "schema": {
+              "$ref": "#/definitions/error"
+            },
+            "headers": {
+              "Configuration-Version": {
+                "type": "integer",
+                "default": 0,
+                "description": "Configuration file version"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/services/haproxy/spoe/spoe_groups": {
+      "get": {
+        "description": "Returns an array of all configured SPOE groups in one SPOE scope.",
+        "tags": [
+          "Spoe"
+        ],
+        "summary": "Return an array of SPOE groups",
+        "operationId": "getSpoeGroups",
+        "parameters": [
+          {
+            "type": "string",
+            "description": "Spoe file name",
+            "name": "spoe",
+            "in": "query",
+            "required": true
+          },
+          {
+            "type": "string",
+            "description": "Spoe scope",
+            "name": "scope",
+            "in": "query",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-nullable": false,
+            "description": "ID of the transaction where we want to add the operation. Cannot be used when version is specified.",
+            "name": "transaction_id",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful operation",
+            "schema": {
+              "type": "object",
+              "required": [
+                "data"
+              ],
+              "properties": {
+                "_version": {
+                  "type": "integer"
+                },
+                "data": {
+                  "$ref": "#/definitions/spoe_groups"
+                }
+              }
+            },
+            "headers": {
+              "Configuration-Version": {
+                "type": "integer",
+                "description": "Spoe configuration file version"
+              }
+            }
+          },
+          "default": {
+            "description": "General Error",
+            "schema": {
+              "$ref": "#/definitions/error"
+            },
+            "headers": {
+              "Configuration-Version": {
+                "type": "integer",
+                "default": 0,
+                "description": "Configuration file version"
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "description": "Adds a new SPOE groups to the SPOE scope.",
+        "tags": [
+          "Spoe"
+        ],
+        "summary": "Add a new SPOE groups",
+        "operationId": "createSpoeGroup",
+        "parameters": [
+          {
+            "type": "string",
+            "description": "Spoe file name",
+            "name": "spoe",
+            "in": "query",
+            "required": true
+          },
+          {
+            "type": "string",
+            "description": "Spoe scope",
+            "name": "scope",
+            "in": "query",
+            "required": true
+          },
+          {
+            "name": "data",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/spoe_group"
+            }
+          },
+          {
+            "type": "string",
+            "x-nullable": false,
+            "description": "ID of the transaction where we want to add the operation. Cannot be used when version is specified.",
+            "name": "transaction_id",
+            "in": "query"
+          },
+          {
+            "type": "integer",
+            "x-nullable": false,
+            "description": "Version used for checking configuration version. Cannot be used when transaction is specified, transaction has it's own version.",
+            "name": "version",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Spoe groups created",
+            "schema": {
+              "$ref": "#/definitions/spoe_group"
+            }
+          },
+          "400": {
+            "description": "Bad request",
+            "schema": {
+              "$ref": "#/definitions/error"
+            },
+            "headers": {
+              "Configuration-Version": {
+                "type": "integer",
+                "default": 0,
+                "description": "Configuration file version"
+              }
+            }
+          },
+          "409": {
+            "description": "The specified resource already exists",
+            "schema": {
+              "$ref": "#/definitions/error"
+            },
+            "headers": {
+              "Configuration-Version": {
+                "type": "integer",
+                "default": 0,
+                "description": "Configuration file version"
+              }
+            }
+          },
+          "default": {
+            "description": "General Error",
+            "schema": {
+              "$ref": "#/definitions/error"
+            },
+            "headers": {
+              "Configuration-Version": {
+                "type": "integer",
+                "default": 0,
+                "description": "Configuration file version"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/services/haproxy/spoe/spoe_groups/{name}": {
+      "get": {
+        "description": "Returns one SPOE groups configuration in one SPOE scope.",
+        "tags": [
+          "Spoe"
+        ],
+        "summary": "Return a SPOE groups",
+        "operationId": "getSpoeGroup",
+        "parameters": [
+          {
+            "type": "string",
+            "description": "Spoe file name",
+            "name": "spoe",
+            "in": "query",
+            "required": true
+          },
+          {
+            "type": "string",
+            "description": "Spoe scope",
+            "name": "scope",
+            "in": "query",
+            "required": true
+          },
+          {
+            "type": "string",
+            "description": "Spoe group name",
+            "name": "name",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-nullable": false,
+            "description": "ID of the transaction where we want to add the operation. Cannot be used when version is specified.",
+            "name": "transaction_id",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful operation",
+            "schema": {
+              "type": "object",
+              "required": [
+                "data"
+              ],
+              "properties": {
+                "_version": {
+                  "type": "integer"
+                },
+                "data": {
+                  "$ref": "#/definitions/spoe_group"
+                }
+              }
+            },
+            "headers": {
+              "Configuration-Version": {
+                "type": "integer",
+                "description": "Spoe configuration file version"
+              }
+            }
+          },
+          "404": {
+            "description": "The specified resource was not found",
+            "schema": {
+              "$ref": "#/definitions/error"
+            },
+            "headers": {
+              "Configuration-Version": {
+                "type": "integer",
+                "default": 0,
+                "description": "Configuration file version"
+              }
+            }
+          },
+          "default": {
+            "description": "General Error",
+            "schema": {
+              "$ref": "#/definitions/error"
+            },
+            "headers": {
+              "Configuration-Version": {
+                "type": "integer",
+                "default": 0,
+                "description": "Configuration file version"
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "description": "Replaces a SPOE groups configuration in one SPOE scope.",
+        "tags": [
+          "Spoe"
+        ],
+        "summary": "Replace a SPOE groups",
+        "operationId": "replaceSpoeGroup",
+        "parameters": [
+          {
+            "type": "string",
+            "description": "Spoe file name",
+            "name": "spoe",
+            "in": "query",
+            "required": true
+          },
+          {
+            "type": "string",
+            "description": "Spoe scope",
+            "name": "scope",
+            "in": "query",
+            "required": true
+          },
+          {
+            "type": "string",
+            "description": "Spoe group name",
+            "name": "name",
+            "in": "path",
+            "required": true
+          },
+          {
+            "name": "data",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/spoe_group"
+            }
+          },
+          {
+            "type": "string",
+            "x-nullable": false,
+            "description": "ID of the transaction where we want to add the operation. Cannot be used when version is specified.",
+            "name": "transaction_id",
+            "in": "query"
+          },
+          {
+            "type": "integer",
+            "x-nullable": false,
+            "description": "Version used for checking configuration version. Cannot be used when transaction is specified, transaction has it's own version.",
+            "name": "version",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Spoe groups replaced",
+            "schema": {
+              "$ref": "#/definitions/spoe_group"
+            }
+          },
+          "400": {
+            "description": "Bad request",
+            "schema": {
+              "$ref": "#/definitions/error"
+            },
+            "headers": {
+              "Configuration-Version": {
+                "type": "integer",
+                "default": 0,
+                "description": "Configuration file version"
+              }
+            }
+          },
+          "404": {
+            "description": "The specified resource was not found",
+            "schema": {
+              "$ref": "#/definitions/error"
+            },
+            "headers": {
+              "Configuration-Version": {
+                "type": "integer",
+                "default": 0,
+                "description": "Configuration file version"
+              }
+            }
+          },
+          "default": {
+            "description": "General Error",
+            "schema": {
+              "$ref": "#/definitions/error"
+            },
+            "headers": {
+              "Configuration-Version": {
+                "type": "integer",
+                "default": 0,
+                "description": "Configuration file version"
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "description": "Deletes a SPOE groups from the one SPOE scope.",
+        "tags": [
+          "Spoe"
+        ],
+        "summary": "Delete a SPOE groups",
+        "operationId": "deleteSpoeGroup",
+        "parameters": [
+          {
+            "type": "string",
+            "description": "Spoe file name",
+            "name": "spoe",
+            "in": "query",
+            "required": true
+          },
+          {
+            "type": "string",
+            "description": "Spoe scope",
+            "name": "scope",
+            "in": "query",
+            "required": true
+          },
+          {
+            "type": "string",
+            "description": "Spoe group name",
+            "name": "name",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-nullable": false,
+            "description": "ID of the transaction where we want to add the operation. Cannot be used when version is specified.",
+            "name": "transaction_id",
+            "in": "query"
+          },
+          {
+            "type": "integer",
+            "x-nullable": false,
+            "description": "Version used for checking configuration version. Cannot be used when transaction is specified, transaction has it's own version.",
+            "name": "version",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Spoe group deleted"
+          },
+          "404": {
+            "description": "The specified resource was not found",
+            "schema": {
+              "$ref": "#/definitions/error"
+            },
+            "headers": {
+              "Configuration-Version": {
+                "type": "integer",
+                "default": 0,
+                "description": "Configuration file version"
+              }
+            }
+          },
+          "default": {
+            "description": "General Error",
+            "schema": {
+              "$ref": "#/definitions/error"
+            },
+            "headers": {
+              "Configuration-Version": {
+                "type": "integer",
+                "default": 0,
+                "description": "Configuration file version"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/services/haproxy/spoe/spoe_messages": {
+      "get": {
+        "description": "Returns an array of all configured spoe messages in one scope.",
+        "tags": [
+          "Spoe"
+        ],
+        "summary": "Return an array of spoe messages in one scope",
+        "operationId": "getSpoeMessages",
+        "parameters": [
+          {
+            "type": "string",
+            "description": "Spoe file name",
+            "name": "spoe",
+            "in": "query",
+            "required": true
+          },
+          {
+            "type": "string",
+            "description": "Spoe scope",
+            "name": "scope",
+            "in": "query",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-nullable": false,
+            "description": "ID of the transaction where we want to add the operation. Cannot be used when version is specified.",
+            "name": "transaction_id",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful operation",
+            "schema": {
+              "type": "object",
+              "required": [
+                "data"
+              ],
+              "properties": {
+                "_version": {
+                  "type": "integer"
+                },
+                "data": {
+                  "$ref": "#/definitions/spoe_messages"
+                }
+              }
+            },
+            "headers": {
+              "Configuration-Version": {
+                "type": "integer",
+                "description": "Spoe configuration file version"
+              }
+            }
+          },
+          "default": {
+            "description": "General Error",
+            "schema": {
+              "$ref": "#/definitions/error"
+            },
+            "headers": {
+              "Configuration-Version": {
+                "type": "integer",
+                "default": 0,
+                "description": "Configuration file version"
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "description": "Adds a new spoe message to the spoe scope.",
+        "tags": [
+          "Spoe"
+        ],
+        "summary": "Add a new spoe message to scope",
+        "operationId": "createSpoeMessage",
+        "parameters": [
+          {
+            "type": "string",
+            "description": "Spoe file name",
+            "name": "spoe",
+            "in": "query",
+            "required": true
+          },
+          {
+            "type": "string",
+            "description": "Spoe scope",
+            "name": "scope",
+            "in": "query",
+            "required": true
+          },
+          {
+            "name": "data",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/spoe_message"
+            }
+          },
+          {
+            "type": "string",
+            "x-nullable": false,
+            "description": "ID of the transaction where we want to add the operation. Cannot be used when version is specified.",
+            "name": "transaction_id",
+            "in": "query"
+          },
+          {
+            "type": "integer",
+            "x-nullable": false,
+            "description": "Version used for checking configuration version. Cannot be used when transaction is specified, transaction has it's own version.",
+            "name": "version",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Spoe message created",
+            "schema": {
+              "$ref": "#/definitions/spoe_message"
+            }
+          },
+          "400": {
+            "description": "Bad request",
+            "schema": {
+              "$ref": "#/definitions/error"
+            },
+            "headers": {
+              "Configuration-Version": {
+                "type": "integer",
+                "default": 0,
+                "description": "Configuration file version"
+              }
+            }
+          },
+          "409": {
+            "description": "The specified resource already exists",
+            "schema": {
+              "$ref": "#/definitions/error"
+            },
+            "headers": {
+              "Configuration-Version": {
+                "type": "integer",
+                "default": 0,
+                "description": "Configuration file version"
+              }
+            }
+          },
+          "default": {
+            "description": "General Error",
+            "schema": {
+              "$ref": "#/definitions/error"
+            },
+            "headers": {
+              "Configuration-Version": {
+                "type": "integer",
+                "default": 0,
+                "description": "Configuration file version"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/services/haproxy/spoe/spoe_messages/{name}": {
+      "get": {
+        "description": "Returns one spoe message configuration in SPOE scope.",
+        "tags": [
+          "Spoe"
+        ],
+        "summary": "Return a spoe message",
+        "operationId": "getSpoeMessage",
+        "parameters": [
+          {
+            "type": "string",
+            "description": "Spoe file name",
+            "name": "spoe",
+            "in": "query",
+            "required": true
+          },
+          {
+            "type": "string",
+            "description": "Spoe scope",
+            "name": "scope",
+            "in": "query",
+            "required": true
+          },
+          {
+            "type": "string",
+            "description": "Spoe message name",
+            "name": "name",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-nullable": false,
+            "description": "ID of the transaction where we want to add the operation. Cannot be used when version is specified.",
+            "name": "transaction_id",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful operation",
+            "schema": {
+              "type": "object",
+              "required": [
+                "data"
+              ],
+              "properties": {
+                "_version": {
+                  "type": "integer"
+                },
+                "data": {
+                  "$ref": "#/definitions/spoe_message"
+                }
+              }
+            },
+            "headers": {
+              "Configuration-Version": {
+                "type": "integer",
+                "description": "Spoe configuration file version"
+              }
+            }
+          },
+          "404": {
+            "description": "The specified resource was not found",
+            "schema": {
+              "$ref": "#/definitions/error"
+            },
+            "headers": {
+              "Configuration-Version": {
+                "type": "integer",
+                "default": 0,
+                "description": "Configuration file version"
+              }
+            }
+          },
+          "default": {
+            "description": "General Error",
+            "schema": {
+              "$ref": "#/definitions/error"
+            },
+            "headers": {
+              "Configuration-Version": {
+                "type": "integer",
+                "default": 0,
+                "description": "Configuration file version"
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "description": "Replaces a spoe message configuration in one SPOE scope.",
+        "tags": [
+          "Spoe"
+        ],
+        "summary": "Replace a spoe message",
+        "operationId": "replaceSpoeMessage",
+        "parameters": [
+          {
+            "type": "string",
+            "description": "Spoe file name",
+            "name": "spoe",
+            "in": "query",
+            "required": true
+          },
+          {
+            "type": "string",
+            "description": "Spoe scope",
+            "name": "scope",
+            "in": "query",
+            "required": true
+          },
+          {
+            "type": "string",
+            "description": "Spoe message name",
+            "name": "name",
+            "in": "path",
+            "required": true
+          },
+          {
+            "name": "data",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/spoe_message"
+            }
+          },
+          {
+            "type": "string",
+            "x-nullable": false,
+            "description": "ID of the transaction where we want to add the operation. Cannot be used when version is specified.",
+            "name": "transaction_id",
+            "in": "query"
+          },
+          {
+            "type": "integer",
+            "x-nullable": false,
+            "description": "Version used for checking configuration version. Cannot be used when transaction is specified, transaction has it's own version.",
+            "name": "version",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Spoe message replaced",
+            "schema": {
+              "$ref": "#/definitions/spoe_message"
+            }
+          },
+          "400": {
+            "description": "Bad request",
+            "schema": {
+              "$ref": "#/definitions/error"
+            },
+            "headers": {
+              "Configuration-Version": {
+                "type": "integer",
+                "default": 0,
+                "description": "Configuration file version"
+              }
+            }
+          },
+          "404": {
+            "description": "The specified resource was not found",
+            "schema": {
+              "$ref": "#/definitions/error"
+            },
+            "headers": {
+              "Configuration-Version": {
+                "type": "integer",
+                "default": 0,
+                "description": "Configuration file version"
+              }
+            }
+          },
+          "default": {
+            "description": "General Error",
+            "schema": {
+              "$ref": "#/definitions/error"
+            },
+            "headers": {
+              "Configuration-Version": {
+                "type": "integer",
+                "default": 0,
+                "description": "Configuration file version"
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "description": "Deletes a spoe message from the SPOE scope.",
+        "tags": [
+          "Spoe"
+        ],
+        "summary": "Delete a spoe message",
+        "operationId": "deleteSpoeMessage",
+        "parameters": [
+          {
+            "type": "string",
+            "description": "Spoe file name",
+            "name": "spoe",
+            "in": "query",
+            "required": true
+          },
+          {
+            "type": "string",
+            "description": "Spoe scope",
+            "name": "scope",
+            "in": "query",
+            "required": true
+          },
+          {
+            "type": "string",
+            "description": "Spoe message name",
+            "name": "name",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-nullable": false,
+            "description": "ID of the transaction where we want to add the operation. Cannot be used when version is specified.",
+            "name": "transaction_id",
+            "in": "query"
+          },
+          {
+            "type": "integer",
+            "x-nullable": false,
+            "description": "Version used for checking configuration version. Cannot be used when transaction is specified, transaction has it's own version.",
+            "name": "version",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Spoe message deleted"
+          },
+          "404": {
+            "description": "The specified resource was not found",
+            "schema": {
+              "$ref": "#/definitions/error"
+            },
+            "headers": {
+              "Configuration-Version": {
+                "type": "integer",
+                "default": 0,
+                "description": "Configuration file version"
+              }
+            }
+          },
+          "default": {
+            "description": "General Error",
+            "schema": {
+              "$ref": "#/definitions/error"
+            },
+            "headers": {
+              "Configuration-Version": {
+                "type": "integer",
+                "default": 0,
+                "description": "Configuration file version"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/services/haproxy/spoe/spoe_scopes": {
+      "get": {
+        "description": "Returns an array of all configured spoe scopes.",
+        "tags": [
+          "Spoe"
+        ],
+        "summary": "Return an array of spoe scopes",
+        "operationId": "getSpoeScopes",
+        "parameters": [
+          {
+            "type": "string",
+            "description": "Spoe file name",
+            "name": "spoe",
+            "in": "query",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-nullable": false,
+            "description": "ID of the transaction where we want to add the operation. Cannot be used when version is specified.",
+            "name": "transaction_id",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful operation",
+            "schema": {
+              "type": "object",
+              "required": [
+                "data"
+              ],
+              "properties": {
+                "_version": {
+                  "type": "integer"
+                },
+                "data": {
+                  "$ref": "#/definitions/spoe_scopes"
+                }
+              }
+            },
+            "headers": {
+              "Configuration-Version": {
+                "type": "integer",
+                "description": "Spoe configuration file version"
+              }
+            }
+          },
+          "default": {
+            "description": "General Error",
+            "schema": {
+              "$ref": "#/definitions/error"
+            },
+            "headers": {
+              "Configuration-Version": {
+                "type": "integer",
+                "default": 0,
+                "description": "Configuration file version"
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "description": "Adds a new spoe scope.",
+        "tags": [
+          "Spoe"
+        ],
+        "summary": "Add a new spoe scope",
+        "operationId": "createSpoeScope",
+        "parameters": [
+          {
+            "type": "string",
+            "description": "Spoe file name",
+            "name": "spoe",
+            "in": "query",
+            "required": true
+          },
+          {
+            "name": "data",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/spoe_scope"
+            }
+          },
+          {
+            "type": "string",
+            "x-nullable": false,
+            "description": "ID of the transaction where we want to add the operation. Cannot be used when version is specified.",
+            "name": "transaction_id",
+            "in": "query"
+          },
+          {
+            "type": "integer",
+            "x-nullable": false,
+            "description": "Version used for checking configuration version. Cannot be used when transaction is specified, transaction has it's own version.",
+            "name": "version",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Spoe scope created",
+            "schema": {
+              "$ref": "#/definitions/spoe_scope"
+            }
+          },
+          "400": {
+            "description": "Bad request",
+            "schema": {
+              "$ref": "#/definitions/error"
+            },
+            "headers": {
+              "Configuration-Version": {
+                "type": "integer",
+                "default": 0,
+                "description": "Configuration file version"
+              }
+            }
+          },
+          "409": {
+            "description": "The specified resource already exists",
+            "schema": {
+              "$ref": "#/definitions/error"
+            },
+            "headers": {
+              "Configuration-Version": {
+                "type": "integer",
+                "default": 0,
+                "description": "Configuration file version"
+              }
+            }
+          },
+          "default": {
+            "description": "General Error",
+            "schema": {
+              "$ref": "#/definitions/error"
+            },
+            "headers": {
+              "Configuration-Version": {
+                "type": "integer",
+                "default": 0,
+                "description": "Configuration file version"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/services/haproxy/spoe/spoe_scopes/{name}": {
+      "get": {
+        "description": "Returns one SPOE scope in one SPOE file.",
+        "tags": [
+          "Spoe"
+        ],
+        "summary": "Return one SPOE scope",
+        "operationId": "getSpoeScope",
+        "parameters": [
+          {
+            "type": "string",
+            "description": "Spoe file name",
+            "name": "spoe",
+            "in": "query",
+            "required": true
+          },
+          {
+            "type": "string",
+            "description": "Spoe scope",
+            "name": "name",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-nullable": false,
+            "description": "ID of the transaction where we want to add the operation. Cannot be used when version is specified.",
+            "name": "transaction_id",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful operation",
+            "schema": {
+              "type": "object",
+              "required": [
+                "data"
+              ],
+              "properties": {
+                "_version": {
+                  "type": "integer"
+                },
+                "data": {
+                  "$ref": "#/definitions/spoe_scope"
+                }
+              }
+            },
+            "headers": {
+              "Configuration-Version": {
+                "type": "integer",
+                "description": "Spoe configuration file version"
+              }
+            }
+          },
+          "404": {
+            "description": "The specified resource was not found",
+            "schema": {
+              "$ref": "#/definitions/error"
+            },
+            "headers": {
+              "Configuration-Version": {
+                "type": "integer",
+                "default": 0,
+                "description": "Configuration file version"
+              }
+            }
+          },
+          "default": {
+            "description": "General Error",
+            "schema": {
+              "$ref": "#/definitions/error"
+            },
+            "headers": {
+              "Configuration-Version": {
+                "type": "integer",
+                "default": 0,
+                "description": "Configuration file version"
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "description": "Deletes a SPOE scope from the configuration file.",
+        "tags": [
+          "Spoe"
+        ],
+        "summary": "Delete a SPOE scope",
+        "operationId": "deleteSpoeScope",
+        "parameters": [
+          {
+            "type": "string",
+            "description": "Spoe file name",
+            "name": "spoe",
+            "in": "query",
+            "required": true
+          },
+          {
+            "type": "string",
+            "description": "Spoe scope name",
+            "name": "name",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-nullable": false,
+            "description": "ID of the transaction where we want to add the operation. Cannot be used when version is specified.",
+            "name": "transaction_id",
+            "in": "query"
+          },
+          {
+            "type": "integer",
+            "x-nullable": false,
+            "description": "Version used for checking configuration version. Cannot be used when transaction is specified, transaction has it's own version.",
+            "name": "version",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Spoe scope deleted"
+          },
+          "404": {
+            "description": "The specified resource was not found",
+            "schema": {
+              "$ref": "#/definitions/error"
+            },
+            "headers": {
+              "Configuration-Version": {
+                "type": "integer",
+                "default": 0,
+                "description": "Configuration file version"
+              }
+            }
+          },
+          "default": {
+            "description": "General Error",
+            "schema": {
+              "$ref": "#/definitions/error"
+            },
+            "headers": {
+              "Configuration-Version": {
+                "type": "integer",
+                "default": 0,
+                "description": "Configuration file version"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/services/haproxy/spoe/version": {
+      "get": {
+        "description": "Returns SPOE configuration version.",
+        "tags": [
+          "Spoe"
+        ],
+        "summary": "Return a SPOE configuration version",
+        "operationId": "getSpoeConfigurationVersion",
+        "parameters": [
+          {
+            "type": "string",
+            "x-nullable": false,
+            "description": "ID of the transaction where we want to add the operation. Cannot be used when version is specified.",
+            "name": "transaction_id",
+            "in": "query"
+          },
+          {
+            "type": "string",
+            "description": "Spoe file name",
+            "name": "spoe",
+            "in": "query",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "SPOE configuration version",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          "404": {
+            "description": "The specified resource was not found",
+            "schema": {
+              "$ref": "#/definitions/error"
+            },
+            "headers": {
+              "Configuration-Version": {
+                "type": "integer",
+                "default": 0,
+                "description": "Configuration file version"
+              }
+            }
+          },
+          "default": {
+            "description": "General Error",
+            "schema": {
+              "$ref": "#/definitions/error"
+            },
+            "headers": {
+              "Configuration-Version": {
+                "type": "integer",
+                "default": 0,
+                "description": "Configuration file version"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/services/haproxy/spoe_transactions": {
+      "get": {
+        "description": "Returns a list of SPOE configuration transactions. Transactions can be filtered by their status.",
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "SpoeTransactions"
+        ],
+        "summary": "Return list of SPOE configuration transactions.",
+        "operationId": "getSpoeTransactions",
+        "parameters": [
+          {
+            "type": "string",
+            "description": "Spoe file name",
+            "name": "spoe",
+            "in": "query",
+            "required": true
+          },
+          {
+            "enum": [
+              "failed",
+              "in_progress"
+            ],
+            "type": "string",
+            "description": "Filter by transaction status",
+            "name": "status",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "$ref": "#/definitions/spoe_transactions"
+            }
+          },
+          "default": {
+            "description": "General Error",
+            "schema": {
+              "$ref": "#/definitions/error"
+            },
+            "headers": {
+              "Configuration-Version": {
+                "type": "integer",
+                "default": 0,
+                "description": "Configuration file version"
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "description": "Starts a new transaction and returns it's id",
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "SpoeTransactions"
+        ],
+        "summary": "Start a new transaction",
+        "operationId": "startSpoeTransaction",
+        "parameters": [
+          {
+            "type": "string",
+            "description": "Spoe file name",
+            "name": "spoe",
+            "in": "query",
+            "required": true
+          },
+          {
+            "type": "integer",
+            "description": "Configuration version on which to work on",
+            "name": "version",
+            "in": "query",
+            "required": true
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Transaction started",
+            "schema": {
+              "$ref": "#/definitions/spoe_transaction"
+            }
+          },
+          "429": {
+            "description": "Too many open transactions",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "code": {
+                  "type": "integer"
+                },
+                "message": {
+                  "type": "string"
+                }
+              },
+              "example": {
+                "code": 429,
+                "message": "cannot start a new transaction, reached the maximum amount of 20 active transactions available"
+              }
+            }
+          },
+          "default": {
+            "description": "General Error",
+            "schema": {
+              "$ref": "#/definitions/error"
+            },
+            "headers": {
+              "Configuration-Version": {
+                "type": "integer",
+                "default": 0,
+                "description": "Configuration file version"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/services/haproxy/spoe_transactions/{id}": {
+      "get": {
+        "description": "Returns one SPOE configuration transactions.",
+        "tags": [
+          "SpoeTransactions"
+        ],
+        "summary": "Return one SPOE configuration transactions",
+        "operationId": "getSpoeTransaction",
+        "parameters": [
+          {
+            "type": "string",
+            "description": "Spoe file name",
+            "name": "spoe",
+            "in": "query",
+            "required": true
+          },
+          {
+            "type": "string",
+            "description": "Transaction id",
+            "name": "id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful operation",
+            "schema": {
+              "$ref": "#/definitions/spoe_transaction"
+            }
+          },
+          "404": {
+            "description": "The specified resource was not found",
+            "schema": {
+              "$ref": "#/definitions/error"
+            },
+            "headers": {
+              "Configuration-Version": {
+                "type": "integer",
+                "default": 0,
+                "description": "Configuration file version"
+              }
+            }
+          },
+          "default": {
+            "description": "General Error",
+            "schema": {
+              "$ref": "#/definitions/error"
+            },
+            "headers": {
+              "Configuration-Version": {
+                "type": "integer",
+                "default": 0,
+                "description": "Configuration file version"
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "description": "Commit transaction, execute all operations in transaction and return msg",
+        "tags": [
+          "SpoeTransactions"
+        ],
+        "summary": "Commit transaction",
+        "operationId": "commitSpoeTransaction",
+        "parameters": [
+          {
+            "type": "string",
+            "description": "Spoe file name",
+            "name": "spoe",
+            "in": "query",
+            "required": true
+          },
+          {
+            "type": "string",
+            "description": "Transaction id",
+            "name": "id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "boolean",
+            "default": false,
+            "description": "If set, do a force reload, do not wait for the configured reload-delay. Cannot be used when transaction is specified, as changes in transaction are not applied directly to configuration.",
+            "name": "force_reload",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Transaction succesfully commited",
+            "schema": {
+              "$ref": "#/definitions/spoe_transaction"
+            }
+          },
+          "202": {
+            "description": "Configuration change accepted and reload requested",
+            "schema": {
+              "$ref": "#/definitions/spoe_transaction"
+            },
+            "headers": {
+              "Reload-ID": {
+                "type": "string",
+                "description": "ID of the requested reload"
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request",
+            "schema": {
+              "$ref": "#/definitions/error"
+            },
+            "headers": {
+              "Configuration-Version": {
+                "type": "integer",
+                "default": 0,
+                "description": "Configuration file version"
+              }
+            }
+          },
+          "404": {
+            "description": "The specified resource was not found",
+            "schema": {
+              "$ref": "#/definitions/error"
+            },
+            "headers": {
+              "Configuration-Version": {
+                "type": "integer",
+                "default": 0,
+                "description": "Configuration file version"
+              }
+            }
+          },
+          "default": {
+            "description": "General Error",
+            "schema": {
+              "$ref": "#/definitions/error"
+            },
+            "headers": {
+              "Configuration-Version": {
+                "type": "integer",
+                "default": 0,
+                "description": "Configuration file version"
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "description": "Deletes a transaction.",
+        "tags": [
+          "SpoeTransactions"
+        ],
+        "summary": "Delete a transaction",
+        "operationId": "deleteSpoeTransaction",
+        "parameters": [
+          {
+            "type": "string",
+            "description": "Spoe file name",
+            "name": "spoe",
+            "in": "query",
+            "required": true
+          },
+          {
+            "type": "string",
+            "description": "Transaction id",
+            "name": "id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Transaction deleted"
+          },
+          "404": {
+            "description": "The specified resource was not found",
+            "schema": {
+              "$ref": "#/definitions/error"
+            },
+            "headers": {
+              "Configuration-Version": {
+                "type": "integer",
+                "default": 0,
+                "description": "Configuration file version"
+              }
+            }
+          },
+          "default": {
+            "description": "General Error",
+            "schema": {
+              "$ref": "#/definitions/error"
+            },
+            "headers": {
+              "Configuration-Version": {
+                "type": "integer",
+                "default": 0,
+                "description": "Configuration file version"
+              }
+            }
+          }
+        }
+      }
+    },
     "/services/haproxy/stats": {
       "get": {
         "description": "Returns a list of HAProxy stats endpoints.",
@@ -23880,6 +31650,699 @@ func init() {
         }
       }
     },
+    "/services/haproxy/storage": {
+      "get": {
+        "description": "Returns a list of endpoints that use HAProxy storage for persistency, e.g. maps, ssl certificates...",
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "Discovery"
+        ],
+        "summary": "Return list of HAProxy storage endpoints",
+        "operationId": "getStorageEndpoints",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "$ref": "#/definitions/endpoints"
+            }
+          },
+          "default": {
+            "description": "General Error",
+            "schema": {
+              "$ref": "#/definitions/error"
+            },
+            "headers": {
+              "Configuration-Version": {
+                "type": "integer",
+                "default": 0,
+                "description": "Configuration file version"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/services/haproxy/storage/maps": {
+      "get": {
+        "description": "Returns a list of all managed map files",
+        "tags": [
+          "Storage"
+        ],
+        "summary": "Return a list of all managed map files",
+        "operationId": "getAllStorageMapFiles",
+        "responses": {
+          "200": {
+            "description": "Successful operation",
+            "schema": {
+              "$ref": "#/definitions/maps"
+            }
+          },
+          "404": {
+            "description": "The specified resource was not found",
+            "schema": {
+              "$ref": "#/definitions/error"
+            },
+            "headers": {
+              "Configuration-Version": {
+                "type": "integer",
+                "default": 0,
+                "description": "Configuration file version"
+              }
+            }
+          },
+          "default": {
+            "description": "General Error",
+            "schema": {
+              "$ref": "#/definitions/error"
+            },
+            "headers": {
+              "Configuration-Version": {
+                "type": "integer",
+                "default": 0,
+                "description": "Configuration file version"
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "description": "Creates a managed storage map file with its entries.",
+        "consumes": [
+          "multipart/form-data"
+        ],
+        "tags": [
+          "Storage"
+        ],
+        "summary": "Creates a managed storage map file with its entries",
+        "operationId": "createStorageMapFile",
+        "parameters": [
+          {
+            "type": "file",
+            "x-mimetype": "text/plain",
+            "description": "The map file contents",
+            "name": "file_upload",
+            "in": "formData"
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Map file created with its entries",
+            "schema": {
+              "$ref": "#/definitions/map"
+            }
+          },
+          "400": {
+            "description": "Bad request",
+            "schema": {
+              "$ref": "#/definitions/error"
+            },
+            "headers": {
+              "Configuration-Version": {
+                "type": "integer",
+                "default": 0,
+                "description": "Configuration file version"
+              }
+            }
+          },
+          "409": {
+            "description": "The specified resource already exists",
+            "schema": {
+              "$ref": "#/definitions/error"
+            },
+            "headers": {
+              "Configuration-Version": {
+                "type": "integer",
+                "default": 0,
+                "description": "Configuration file version"
+              }
+            }
+          },
+          "default": {
+            "description": "General Error",
+            "schema": {
+              "$ref": "#/definitions/error"
+            },
+            "headers": {
+              "Configuration-Version": {
+                "type": "integer",
+                "default": 0,
+                "description": "Configuration file version"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/services/haproxy/storage/maps/{name}": {
+      "get": {
+        "description": "Returns the contents of one managed map file from disk",
+        "produces": [
+          "application/octet-stream"
+        ],
+        "tags": [
+          "Storage"
+        ],
+        "summary": "Return the contents of one managed map file from disk",
+        "operationId": "getOneStorageMap",
+        "parameters": [
+          {
+            "type": "string",
+            "description": "Map file storage_name",
+            "name": "name",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful operation",
+            "schema": {
+              "type": "file"
+            }
+          },
+          "404": {
+            "description": "The specified resource was not found",
+            "schema": {
+              "$ref": "#/definitions/error"
+            },
+            "headers": {
+              "Configuration-Version": {
+                "type": "integer",
+                "default": 0,
+                "description": "Configuration file version"
+              }
+            }
+          },
+          "default": {
+            "description": "General Error",
+            "schema": {
+              "$ref": "#/definitions/error"
+            },
+            "headers": {
+              "Configuration-Version": {
+                "type": "integer",
+                "default": 0,
+                "description": "Configuration file version"
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "description": "Replaces the contents of a managed map file on disk",
+        "consumes": [
+          "text/plain"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "Storage"
+        ],
+        "summary": "Replace contents of a managed map file on disk",
+        "operationId": "replaceStorageMapFile",
+        "parameters": [
+          {
+            "type": "string",
+            "description": "Map file storage_name",
+            "name": "name",
+            "in": "path",
+            "required": true
+          },
+          {
+            "name": "data",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "type": "boolean",
+            "default": false,
+            "description": "If set, no reload will be initiated after update",
+            "name": "skip_reload",
+            "in": "query"
+          },
+          {
+            "type": "boolean",
+            "default": false,
+            "description": "If set, do a force reload, do not wait for the configured reload-delay. Cannot be used when transaction is specified, as changes in transaction are not applied directly to configuration.",
+            "name": "force_reload",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "202": {
+            "description": "Configuration change accepted and reload requested",
+            "headers": {
+              "Reload-ID": {
+                "type": "string",
+                "description": "ID of the requested reload"
+              }
+            }
+          },
+          "204": {
+            "description": "Map file replaced"
+          },
+          "400": {
+            "description": "Bad request",
+            "schema": {
+              "$ref": "#/definitions/error"
+            },
+            "headers": {
+              "Configuration-Version": {
+                "type": "integer",
+                "default": 0,
+                "description": "Configuration file version"
+              }
+            }
+          },
+          "404": {
+            "description": "The specified resource was not found",
+            "schema": {
+              "$ref": "#/definitions/error"
+            },
+            "headers": {
+              "Configuration-Version": {
+                "type": "integer",
+                "default": 0,
+                "description": "Configuration file version"
+              }
+            }
+          },
+          "default": {
+            "description": "General Error",
+            "schema": {
+              "$ref": "#/definitions/error"
+            },
+            "headers": {
+              "Configuration-Version": {
+                "type": "integer",
+                "default": 0,
+                "description": "Configuration file version"
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "description": "Deletes a managed map file from disk.",
+        "tags": [
+          "Storage"
+        ],
+        "summary": "Deletes a managed map file from disk",
+        "operationId": "deleteStorageMap",
+        "parameters": [
+          {
+            "type": "string",
+            "description": "Map file storage_name",
+            "name": "name",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Map file deleted"
+          },
+          "404": {
+            "description": "The specified resource was not found",
+            "schema": {
+              "$ref": "#/definitions/error"
+            },
+            "headers": {
+              "Configuration-Version": {
+                "type": "integer",
+                "default": 0,
+                "description": "Configuration file version"
+              }
+            }
+          },
+          "default": {
+            "description": "General Error",
+            "schema": {
+              "$ref": "#/definitions/error"
+            },
+            "headers": {
+              "Configuration-Version": {
+                "type": "integer",
+                "default": 0,
+                "description": "Configuration file version"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/services/haproxy/storage/ssl_certificates": {
+      "get": {
+        "description": "Returns all available SSL certificates on disk.",
+        "tags": [
+          "Storage"
+        ],
+        "summary": "Return all available SSL certificates on disk",
+        "operationId": "getAllStorageSSLCertificates",
+        "responses": {
+          "200": {
+            "description": "Successful operation",
+            "schema": {
+              "$ref": "#/definitions/ssl_certificates"
+            }
+          },
+          "404": {
+            "description": "The specified resource was not found",
+            "schema": {
+              "$ref": "#/definitions/error"
+            },
+            "headers": {
+              "Configuration-Version": {
+                "type": "integer",
+                "default": 0,
+                "description": "Configuration file version"
+              }
+            }
+          },
+          "default": {
+            "description": "General Error",
+            "schema": {
+              "$ref": "#/definitions/error"
+            },
+            "headers": {
+              "Configuration-Version": {
+                "type": "integer",
+                "default": 0,
+                "description": "Configuration file version"
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "description": "Creates SSL certificate.",
+        "consumes": [
+          "multipart/form-data"
+        ],
+        "tags": [
+          "Storage"
+        ],
+        "summary": "Create SSL certificate",
+        "operationId": "createStorageSSLCertificate",
+        "parameters": [
+          {
+            "type": "file",
+            "x-mimetype": "text/plain",
+            "description": "The SSL certificate to upload",
+            "name": "file_upload",
+            "in": "formData"
+          },
+          {
+            "type": "boolean",
+            "default": false,
+            "description": "If set, do a force reload, do not wait for the configured reload-delay. Cannot be used when transaction is specified, as changes in transaction are not applied directly to configuration.",
+            "name": "force_reload",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "SSL certificate created",
+            "schema": {
+              "$ref": "#/definitions/ssl_certificate"
+            }
+          },
+          "400": {
+            "description": "Bad request",
+            "schema": {
+              "$ref": "#/definitions/error"
+            },
+            "headers": {
+              "Configuration-Version": {
+                "type": "integer",
+                "default": 0,
+                "description": "Configuration file version"
+              }
+            }
+          },
+          "409": {
+            "description": "The specified resource already exists",
+            "schema": {
+              "$ref": "#/definitions/error"
+            },
+            "headers": {
+              "Configuration-Version": {
+                "type": "integer",
+                "default": 0,
+                "description": "Configuration file version"
+              }
+            }
+          },
+          "default": {
+            "description": "General Error",
+            "schema": {
+              "$ref": "#/definitions/error"
+            },
+            "headers": {
+              "Configuration-Version": {
+                "type": "integer",
+                "default": 0,
+                "description": "Configuration file version"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/services/haproxy/storage/ssl_certificates/{name}": {
+      "get": {
+        "description": "Returns one SSL certificate from disk.",
+        "tags": [
+          "Storage"
+        ],
+        "summary": "Return one SSL certificate from disk",
+        "operationId": "getOneStorageSSLCertificate",
+        "parameters": [
+          {
+            "type": "string",
+            "description": "SSL certificate name",
+            "name": "name",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful operation",
+            "schema": {
+              "$ref": "#/definitions/ssl_certificate"
+            }
+          },
+          "404": {
+            "description": "The specified resource was not found",
+            "schema": {
+              "$ref": "#/definitions/error"
+            },
+            "headers": {
+              "Configuration-Version": {
+                "type": "integer",
+                "default": 0,
+                "description": "Configuration file version"
+              }
+            }
+          },
+          "default": {
+            "description": "General Error",
+            "schema": {
+              "$ref": "#/definitions/error"
+            },
+            "headers": {
+              "Configuration-Version": {
+                "type": "integer",
+                "default": 0,
+                "description": "Configuration file version"
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "description": "Replaces SSL certificate on disk.",
+        "consumes": [
+          "text/plain"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "Storage"
+        ],
+        "summary": "Replace SSL certificates on disk",
+        "operationId": "replaceStorageSSLCertificate",
+        "parameters": [
+          {
+            "type": "string",
+            "description": "SSL certificate name",
+            "name": "name",
+            "in": "path",
+            "required": true
+          },
+          {
+            "name": "data",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "type": "boolean",
+            "default": false,
+            "description": "If set, no reload will be initiated after update",
+            "name": "skip_reload",
+            "in": "query"
+          },
+          {
+            "type": "boolean",
+            "default": false,
+            "description": "If set, do a force reload, do not wait for the configured reload-delay. Cannot be used when transaction is specified, as changes in transaction are not applied directly to configuration.",
+            "name": "force_reload",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "SSL certificate replaced",
+            "schema": {
+              "$ref": "#/definitions/ssl_certificate"
+            }
+          },
+          "202": {
+            "description": "SSL certificate replaced and reload requested",
+            "schema": {
+              "$ref": "#/definitions/ssl_certificate"
+            },
+            "headers": {
+              "Reload-ID": {
+                "type": "string",
+                "description": "ID of the requested reload"
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request",
+            "schema": {
+              "$ref": "#/definitions/error"
+            },
+            "headers": {
+              "Configuration-Version": {
+                "type": "integer",
+                "default": 0,
+                "description": "Configuration file version"
+              }
+            }
+          },
+          "404": {
+            "description": "The specified resource was not found",
+            "schema": {
+              "$ref": "#/definitions/error"
+            },
+            "headers": {
+              "Configuration-Version": {
+                "type": "integer",
+                "default": 0,
+                "description": "Configuration file version"
+              }
+            }
+          },
+          "default": {
+            "description": "General Error",
+            "schema": {
+              "$ref": "#/definitions/error"
+            },
+            "headers": {
+              "Configuration-Version": {
+                "type": "integer",
+                "default": 0,
+                "description": "Configuration file version"
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "description": "Deletes SSL certificate from disk.",
+        "tags": [
+          "Storage"
+        ],
+        "summary": "Delete SSL certificate from disk",
+        "operationId": "deleteStorageSSLCertificate",
+        "parameters": [
+          {
+            "type": "string",
+            "description": "SSL certificate name",
+            "name": "name",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "boolean",
+            "default": false,
+            "description": "If set, no reload will be initiated after update",
+            "name": "skip_reload",
+            "in": "query"
+          },
+          {
+            "type": "boolean",
+            "default": false,
+            "description": "If set, do a force reload, do not wait for the configured reload-delay. Cannot be used when transaction is specified, as changes in transaction are not applied directly to configuration.",
+            "name": "force_reload",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "202": {
+            "description": "SSL certificate deleted and reload requested",
+            "headers": {
+              "Reload-ID": {
+                "type": "string",
+                "description": "ID of the requested reload"
+              }
+            }
+          },
+          "204": {
+            "description": "SSL certificate deleted"
+          },
+          "404": {
+            "description": "The specified resource was not found",
+            "schema": {
+              "$ref": "#/definitions/error"
+            },
+            "headers": {
+              "Configuration-Version": {
+                "type": "integer",
+                "default": 0,
+                "description": "Configuration file version"
+              }
+            }
+          },
+          "default": {
+            "description": "General Error",
+            "schema": {
+              "$ref": "#/definitions/error"
+            },
+            "headers": {
+              "Configuration-Version": {
+                "type": "integer",
+                "default": 0,
+                "description": "Configuration file version"
+              }
+            }
+          }
+        }
+      }
+    },
     "/services/haproxy/transactions": {
       "get": {
         "description": "Returns a list of HAProxy configuration transactions. Transactions can be filtered by their status.",
@@ -23949,6 +32412,24 @@ func init() {
             "description": "Transaction started",
             "schema": {
               "$ref": "#/definitions/transaction"
+            }
+          },
+          "429": {
+            "description": "Too many open transactions",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "code": {
+                  "type": "integer"
+                },
+                "message": {
+                  "type": "string"
+                }
+              },
+              "example": {
+                "code": 429,
+                "message": "cannot start a new transaction, reached the maximum amount of 20 active transactions available"
+              }
             }
           },
           "default": {
@@ -24076,6 +32557,19 @@ func init() {
           },
           "404": {
             "description": "The specified resource was not found",
+            "schema": {
+              "$ref": "#/definitions/error"
+            },
+            "headers": {
+              "Configuration-Version": {
+                "type": "integer",
+                "default": 0,
+                "description": "Configuration file version"
+              }
+            }
+          },
+          "406": {
+            "description": "The specified resource cannot be handled",
             "schema": {
               "$ref": "#/definitions/error"
             },
@@ -24346,6 +32840,26 @@ func init() {
       },
       "x-go-name": "CPUMap"
     },
+    "GlobalLogSendHostname": {
+      "type": "object",
+      "required": [
+        "enabled"
+      ],
+      "properties": {
+        "enabled": {
+          "type": "string",
+          "enum": [
+            "enabled",
+            "disabled"
+          ]
+        },
+        "param": {
+          "type": "string",
+          "pattern": "^[^\\s]+$"
+        }
+      },
+      "x-display-name": "Log Send Hostname"
+    },
     "GlobalLuaLoadsItems0": {
       "type": "object",
       "required": [
@@ -24391,6 +32905,21 @@ func init() {
         }
       },
       "x-go-name": "RuntimeAPI"
+    },
+    "HTTPRequestRuleReturnHdrsItems0": {
+      "type": "object",
+      "required": [
+        "name",
+        "fmt"
+      ],
+      "properties": {
+        "fmt": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        }
+      }
     },
     "InfoAPI": {
       "type": "object",
@@ -24585,6 +33114,44 @@ func init() {
         }
       }
     },
+    "SpoeMessageEvent": {
+      "type": "object",
+      "required": [
+        "name"
+      ],
+      "properties": {
+        "cond": {
+          "type": "string",
+          "enum": [
+            "if",
+            "unless"
+          ],
+          "x-display-name": "Condition"
+        },
+        "cond_test": {
+          "type": "string",
+          "x-dependency": {
+            "cond": {
+              "required": true
+            }
+          },
+          "x-display-name": "Condition Test"
+        },
+        "name": {
+          "type": "string",
+          "enum": [
+            "on-client-session",
+            "on-server-session",
+            "on-frontend-tcp-request",
+            "on-backend-tcp-request",
+            "on-tcp-response",
+            "on-frontend-http-request",
+            "on-backend-http-request",
+            "on-http-response"
+          ]
+        }
+      }
+    },
     "StickTableFieldsItems0": {
       "type": "object",
       "properties": {
@@ -24596,6 +33163,7 @@ func init() {
             "gpc0_rate",
             "gpc1",
             "gpc1_rate",
+            "gpt0",
             "conn_cnt",
             "conn_cur",
             "conn_rate",
@@ -24661,12 +33229,187 @@ func init() {
       },
       "additionalProperties": false
     },
+    "acl_file": {
+      "description": "ACL File",
+      "type": "object",
+      "title": "ACL File",
+      "properties": {
+        "description": {
+          "type": "string"
+        },
+        "id": {
+          "type": "string"
+        },
+        "storage_name": {
+          "type": "string"
+        }
+      }
+    },
+    "acl_file_entry": {
+      "description": "One ACL File Entry",
+      "type": "object",
+      "title": "One ACL File Entry",
+      "properties": {
+        "id": {
+          "type": "string",
+          "readOnly": true
+        },
+        "value": {
+          "type": "string"
+        }
+      }
+    },
+    "acl_files": {
+      "description": "Array of runtime acl files",
+      "type": "array",
+      "title": "ACL Files Array",
+      "items": {
+        "$ref": "#/definitions/acl_file"
+      }
+    },
+    "acl_files_entries": {
+      "description": "Array of entries of one runtime acl file",
+      "type": "array",
+      "title": "ACL Files Entries",
+      "items": {
+        "$ref": "#/definitions/acl_file_entry"
+      }
+    },
     "acls": {
       "description": "HAProxy ACL lines array (corresponds to acl directives)",
       "type": "array",
       "title": "ACL Lines Array",
       "items": {
         "$ref": "#/definitions/acl"
+      }
+    },
+    "awsFilters": {
+      "type": "object",
+      "required": [
+        "key",
+        "value"
+      ],
+      "properties": {
+        "key": {
+          "description": "Key to use as filter, using the format specified at https://docs.aws.amazon.com/cli/latest/reference/ec2/describe-instances.html#options",
+          "type": "string"
+        },
+        "value": {
+          "description": "Value of the filter to use",
+          "type": "string"
+        }
+      }
+    },
+    "awsRegion": {
+      "description": "AWS region configuration",
+      "type": "object",
+      "title": "AWS region",
+      "required": [
+        "name",
+        "region",
+        "enabled",
+        "retry_timeout",
+        "ipv4_address"
+      ],
+      "properties": {
+        "access_key_id": {
+          "description": "AWS Access Key ID.",
+          "type": "string"
+        },
+        "allowlist": {
+          "description": "Specify the AWS filters used to filter the EC2 instances to add",
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/awsFilters"
+          }
+        },
+        "denylist": {
+          "description": "Specify the AWS filters used to filter the EC2 instances to ignore",
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/awsFilters"
+          }
+        },
+        "description": {
+          "type": "string"
+        },
+        "enabled": {
+          "type": "boolean"
+        },
+        "id": {
+          "description": "Auto generated ID.",
+          "type": "string",
+          "pattern": "^[^\\s]+$",
+          "x-nullable": true,
+          "readOnly": true
+        },
+        "ipv4_address": {
+          "description": "Select which IPv4 address the Service Discovery has to use for the backend server entry",
+          "type": "string",
+          "enum": [
+            "private",
+            "public"
+          ]
+        },
+        "name": {
+          "type": "string"
+        },
+        "region": {
+          "type": "string"
+        },
+        "retry_timeout": {
+          "description": "Duration in seconds in-between data pulling requests to the AWS region",
+          "type": "integer",
+          "minimum": 1
+        },
+        "secret_access_key": {
+          "description": "AWS Secret Access Key.",
+          "type": "string"
+        },
+        "server_slots_base": {
+          "type": "integer",
+          "default": 10
+        },
+        "server_slots_growth_increment": {
+          "type": "integer"
+        },
+        "server_slots_growth_type": {
+          "type": "string",
+          "default": "exponential",
+          "enum": [
+            "linear",
+            "exponential"
+          ]
+        }
+      },
+      "example": {
+        "access_key_id": "****************L7GT",
+        "allowlist": [
+          {
+            "key": "tag-key",
+            "value": "Instance:Having:This:Tag"
+          }
+        ],
+        "denylist": [
+          {
+            "key": "tag:Environment",
+            "value": "development"
+          }
+        ],
+        "enabled": true,
+        "id": 0,
+        "ipv4_address": "private",
+        "name": "frontend-service",
+        "region": "us-east-1",
+        "secret_access_key": "****************soLl"
+      }
+    },
+    "awsRegions": {
+      "description": "AWS regions array",
+      "type": "array",
+      "title": "AWS",
+      "items": {
+        "$ref": "#/definitions/awsRegion"
       }
     },
     "backend": {
@@ -24693,7 +33436,8 @@ func init() {
             "mysql-check",
             "pgsql-check",
             "tcp-check",
-            "redis-check"
+            "redis-check",
+            "httpchk"
           ],
           "x-display-name": "Advanced Check"
         },
@@ -24865,13 +33609,13 @@ func init() {
             }
           }
         },
-        "httpchk": {
+        "httpchk_params": {
           "x-dependency": {
             "mode": {
               "value": "http"
             }
           },
-          "$ref": "#/definitions/httpchk"
+          "$ref": "#/definitions/httpchk_params"
         },
         "log_tag": {
           "type": "string",
@@ -24884,10 +33628,16 @@ func init() {
             "tcp"
           ]
         },
+        "mysql_check_params": {
+          "$ref": "#/definitions/mysql_check_params"
+        },
         "name": {
           "type": "string",
           "pattern": "^[A-Za-z0-9-_.:]+$",
           "x-nullable": false
+        },
+        "pgsql_check_params": {
+          "$ref": "#/definitions/pgsql_check_params"
         },
         "queue_timeout": {
           "type": "integer",
@@ -24903,6 +33653,9 @@ func init() {
         "server_timeout": {
           "type": "integer",
           "x-nullable": true
+        },
+        "smtpchk_params": {
+          "$ref": "#/definitions/smtpchk_params"
         },
         "stats_options": {
           "$ref": "#/definitions/stats_options"
@@ -24946,18 +33699,23 @@ func init() {
               ]
             }
           }
+        },
+        "tunnel_timeout": {
+          "type": "integer",
+          "x-nullable": true
         }
       },
       "additionalProperties": false,
       "example": {
+        "adv_check": "httpchk",
         "balance": {
           "algorithm": "roundrobin"
         },
         "forwardfor": {
           "enabled": "enabled"
         },
-        "httpchk": {
-          "method": "OPTIONS",
+        "httpchk_params": {
+          "method": "GET",
           "uri": "/check",
           "version": "HTTP/1.1"
         },
@@ -25015,7 +33773,7 @@ func init() {
       "example": {
         "cond": "if",
         "cond_test": "{ req_ssl_sni -i www.example.com }",
-        "id": 0,
+        "index": 0,
         "name": "test_backend"
       }
     },
@@ -25058,7 +33816,6 @@ func init() {
         },
         "hdr_name": {
           "type": "string",
-          "pattern": "^[^\\s]+$",
           "x-dependency": {
             "algorithm": {
               "required": true,
@@ -25098,7 +33855,6 @@ func init() {
         },
         "uri_depth": {
           "type": "integer",
-          "pattern": "^[^\\d+$]",
           "x-dependency": {
             "algorithm": {
               "value": "uri"
@@ -25108,7 +33864,6 @@ func init() {
         },
         "uri_len": {
           "type": "integer",
-          "pattern": "^[^\\d+$]",
           "x-dependency": {
             "algorithm": {
               "value": "uri"
@@ -25147,7 +33902,6 @@ func init() {
         },
         "url_param_max_wait": {
           "type": "integer",
-          "pattern": "^[^\\d+$]",
           "x-dependency": {
             "algorithm": {
               "value": "url_param"
@@ -25165,6 +33919,9 @@ func init() {
         "name"
       ],
       "properties": {
+        "accept_netscaler_cip": {
+          "type": "integer"
+        },
         "accept_proxy": {
           "type": "boolean"
         },
@@ -25180,10 +33937,228 @@ func init() {
           "pattern": "^[^\\s]+$",
           "x-display-name": "ALPN Protocols"
         },
+        "backlog": {
+          "type": "string"
+        },
+        "ca_ignore_err": {
+          "type": "string",
+          "x-dependency": {
+            "ssl": {
+              "value": true
+            }
+          }
+        },
+        "ca_sign_file": {
+          "type": "string",
+          "x-dependency": {
+            "ssl": {
+              "value": true
+            }
+          }
+        },
+        "ca_sign_pass": {
+          "type": "string",
+          "x-dependency": {
+            "ssl": {
+              "value": true
+            }
+          },
+          "x-display-name": "Passphrase"
+        },
+        "ca_verify_file": {
+          "type": "string",
+          "x-dependency": {
+            "ca_file": {
+              "value": true
+            }
+          }
+        },
+        "ciphers": {
+          "type": "string",
+          "x-dependency": {
+            "ssl": {
+              "value": true
+            }
+          }
+        },
+        "ciphersuites": {
+          "type": "string",
+          "x-dependency": {
+            "ssl": {
+              "value": true
+            }
+          }
+        },
+        "crl_file": {
+          "type": "string",
+          "x-dependency": {
+            "ssl": {
+              "value": true
+            }
+          }
+        },
+        "crt_ignore_err": {
+          "type": "string",
+          "x-dependency": {
+            "ssl": {
+              "value": true
+            }
+          }
+        },
+        "crt_list": {
+          "type": "string",
+          "x-dependency": {
+            "ssl": {
+              "value": true
+            }
+          }
+        },
+        "curves": {
+          "type": "string",
+          "x-dependency": {
+            "ssl": {
+              "value": true
+            }
+          }
+        },
+        "defer_accept": {
+          "type": "boolean"
+        },
+        "ecdhe": {
+          "type": "string",
+          "x-dependency": {
+            "ssl": {
+              "value": true
+            }
+          }
+        },
+        "expose_fd_listeners": {
+          "type": "boolean"
+        },
+        "force_sslv3": {
+          "type": "boolean"
+        },
+        "force_tlsv10": {
+          "type": "boolean"
+        },
+        "force_tlsv11": {
+          "type": "boolean"
+        },
+        "force_tlsv12": {
+          "type": "boolean"
+        },
+        "force_tlsv13": {
+          "type": "boolean"
+        },
+        "generate_certificates": {
+          "type": "boolean",
+          "x-dependency": {
+            "ssl": {
+              "value": true
+            }
+          }
+        },
+        "gid": {
+          "type": "integer",
+          "x-display-name": "Group ID"
+        },
+        "group": {
+          "type": "string",
+          "x-display-name": "Group name"
+        },
+        "id": {
+          "type": "string",
+          "x-display-name": "Socket ID"
+        },
+        "interface": {
+          "type": "string"
+        },
+        "level": {
+          "type": "string",
+          "enum": [
+            "user",
+            "operator",
+            "admin"
+          ]
+        },
+        "maxconn": {
+          "type": "integer"
+        },
+        "mode": {
+          "type": "string"
+        },
+        "mss": {
+          "type": "string"
+        },
         "name": {
           "type": "string",
           "pattern": "^[^\\s]+$",
           "x-nullable": false
+        },
+        "namespace": {
+          "type": "string"
+        },
+        "nice": {
+          "type": "integer"
+        },
+        "no_ca_names": {
+          "type": "boolean",
+          "x-dependency": {
+            "ssl": {
+              "value": true
+            }
+          }
+        },
+        "no_sslv3": {
+          "type": "boolean",
+          "x-dependency": {
+            "ssl": {
+              "value": true
+            }
+          }
+        },
+        "no_tls_tickets": {
+          "type": "boolean",
+          "x-dependency": {
+            "ssl": {
+              "value": true
+            }
+          }
+        },
+        "no_tlsv10": {
+          "type": "boolean",
+          "x-dependency": {
+            "ssl": {
+              "value": true
+            }
+          }
+        },
+        "no_tlsv11": {
+          "type": "boolean",
+          "x-dependency": {
+            "ssl": {
+              "value": true
+            }
+          }
+        },
+        "no_tlsv12": {
+          "type": "boolean",
+          "x-dependency": {
+            "ssl": {
+              "value": true
+            }
+          }
+        },
+        "no_tlsv13": {
+          "type": "boolean",
+          "x-dependency": {
+            "ssl": {
+              "value": true
+            }
+          }
+        },
+        "npn": {
+          "type": "string"
         },
         "port": {
           "type": "integer",
@@ -25191,9 +34166,31 @@ func init() {
           "minimum": 1,
           "x-nullable": true
         },
+        "port-range-end": {
+          "type": "integer",
+          "maximum": 65535,
+          "minimum": 1,
+          "x-nullable": true
+        },
+        "prefer_client_ciphers": {
+          "type": "boolean"
+        },
         "process": {
           "type": "string",
           "pattern": "^[^\\s]+$"
+        },
+        "proto": {
+          "type": "string",
+          "x-display-name": "Protocol name"
+        },
+        "severity_output": {
+          "type": "string",
+          "enum": [
+            "none",
+            "number",
+            "string"
+          ],
+          "x-display-name": "Format"
         },
         "ssl": {
           "type": "boolean"
@@ -25217,14 +34214,57 @@ func init() {
             }
           }
         },
+        "ssl_max_ver": {
+          "type": "string",
+          "enum": [
+            "SSLv3",
+            "TLSv1.0",
+            "TLSv1.1",
+            "TLSv1.2",
+            "TLSv1.3"
+          ]
+        },
+        "ssl_min_ver": {
+          "type": "string",
+          "enum": [
+            "SSLv3",
+            "TLSv1.0",
+            "TLSv1.1",
+            "TLSv1.2",
+            "TLSv1.3"
+          ]
+        },
+        "strict_sni": {
+          "type": "boolean",
+          "x-dependency": {
+            "ssl": {
+              "value": true
+            }
+          }
+        },
         "tcp_user_timeout": {
           "type": "integer",
           "x-nullable": true
         },
+        "tfo": {
+          "type": "boolean"
+        },
+        "tls_ticket_keys": {
+          "type": "string"
+        },
         "transparent": {
           "type": "boolean"
         },
+        "uid": {
+          "type": "string"
+        },
+        "user": {
+          "type": "string"
+        },
         "v4v6": {
+          "type": "boolean"
+        },
+        "v6only": {
           "type": "boolean"
         },
         "verify": {
@@ -25312,6 +34352,113 @@ func init() {
         }
       }
     },
+    "consul": {
+      "description": "Consul server configuration",
+      "type": "object",
+      "title": "Consul server",
+      "required": [
+        "address",
+        "port",
+        "enabled",
+        "retry_timeout"
+      ],
+      "properties": {
+        "address": {
+          "type": "string",
+          "pattern": "^[^\\s]+$"
+        },
+        "description": {
+          "type": "string"
+        },
+        "enabled": {
+          "type": "boolean"
+        },
+        "id": {
+          "description": "Auto generated ID.",
+          "type": "string",
+          "pattern": "^[^\\s]+$",
+          "x-nullable": true
+        },
+        "name": {
+          "type": "string"
+        },
+        "port": {
+          "type": "integer",
+          "maximum": 65535,
+          "minimum": 1
+        },
+        "retry_timeout": {
+          "description": "Duration in seconds in-between data pulling requests to the consul server",
+          "type": "integer",
+          "minimum": 1
+        },
+        "server_slots_base": {
+          "type": "integer",
+          "default": 10
+        },
+        "server_slots_growth_increment": {
+          "type": "integer"
+        },
+        "server_slots_growth_type": {
+          "type": "string",
+          "default": "exponential",
+          "enum": [
+            "linear",
+            "exponential"
+          ]
+        },
+        "service-blacklist": {
+          "description": "deprecated, use service_denylist",
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[^\\s]+$"
+          }
+        },
+        "service-whitelist": {
+          "description": "deprecated, use service_allowlist",
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[^\\s]+$"
+          }
+        },
+        "service_allowlist": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[^\\s]+$"
+          }
+        },
+        "service_denylist": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[^\\s]+$"
+          }
+        },
+        "token": {
+          "type": "string",
+          "pattern": "^[^\\s]+$"
+        }
+      },
+      "additionalProperties": false,
+      "example": {
+        "address": "127.0.0.1",
+        "enabled": true,
+        "id": "0",
+        "port": 90,
+        "retry_timeout": 10
+      }
+    },
+    "consuls": {
+      "description": "Consuls array",
+      "type": "array",
+      "title": "Consuls",
+      "items": {
+        "$ref": "#/definitions/consul"
+      }
+    },
     "cookie": {
       "type": "object",
       "required": [
@@ -25335,12 +34482,10 @@ func init() {
           "type": "boolean"
         },
         "maxidle": {
-          "type": "integer",
-          "pattern": "^[^\\d+$]"
+          "type": "integer"
         },
         "maxlife": {
-          "type": "integer",
-          "pattern": "^[^\\d+$]"
+          "type": "integer"
         },
         "name": {
           "type": "string",
@@ -25370,7 +34515,79 @@ func init() {
     },
     "default_server": {
       "type": "object",
+      "title": "Default Server",
       "properties": {
+        "address": {
+          "type": "string",
+          "pattern": "^[^\\s]+$",
+          "x-nullable": false
+        },
+        "agent-addr": {
+          "type": "string",
+          "pattern": "^[^\\s]+$"
+        },
+        "agent-check": {
+          "type": "string",
+          "enum": [
+            "enabled",
+            "disabled"
+          ],
+          "x-dependency": {
+            "agent-port": {
+              "required": true
+            }
+          }
+        },
+        "agent-inter": {
+          "type": "integer",
+          "x-nullable": true
+        },
+        "agent-port": {
+          "type": "integer",
+          "maximum": 65535,
+          "minimum": 1,
+          "x-nullable": true
+        },
+        "agent-send": {
+          "type": "string"
+        },
+        "allow_0rtt": {
+          "type": "boolean"
+        },
+        "alpn": {
+          "type": "string",
+          "pattern": "^[^\\s]+$",
+          "x-display-name": "ALPN Protocols"
+        },
+        "backup": {
+          "type": "string",
+          "enum": [
+            "enabled",
+            "disabled"
+          ]
+        },
+        "ca_file": {
+          "type": "string",
+          "x-dependency": {
+            "ssl": {
+              "value": true
+            }
+          }
+        },
+        "check": {
+          "type": "string",
+          "enum": [
+            "enabled",
+            "disabled"
+          ]
+        },
+        "check-send-proxy": {
+          "type": "string",
+          "enum": [
+            "enabled",
+            "disabled"
+          ]
+        },
         "check-sni": {
           "type": "string",
           "pattern": "^[^\\s]+$"
@@ -25382,16 +34599,121 @@ func init() {
             "disabled"
           ]
         },
+        "check_alpn": {
+          "type": "string",
+          "pattern": "^[^\\s]+$",
+          "x-display-name": "Protocols"
+        },
+        "check_proto": {
+          "type": "string",
+          "pattern": "^[^\\s]+$",
+          "x-display-name": "Name"
+        },
+        "check_via_socks4": {
+          "type": "string",
+          "enum": [
+            "enabled",
+            "disabled"
+          ]
+        },
+        "ciphers": {
+          "type": "string",
+          "x-dependency": {
+            "ssl": {
+              "value": "enabled"
+            }
+          }
+        },
+        "ciphersuites": {
+          "type": "string",
+          "x-dependency": {
+            "ssl": {
+              "value": "enabled"
+            }
+          }
+        },
+        "cookie": {
+          "type": "string",
+          "pattern": "^[^\\s]+$"
+        },
+        "crl_file": {
+          "type": "string",
+          "x-dependency": {
+            "ssl": {
+              "value": "enabled"
+            }
+          }
+        },
+        "disabled": {
+          "type": "string",
+          "enum": [
+            "enabled",
+            "disabled"
+          ]
+        },
         "downinter": {
           "type": "integer",
           "x-nullable": true
         },
+        "enabled": {
+          "type": "string",
+          "enum": [
+            "enabled",
+            "disabled"
+          ]
+        },
+        "error_limit": {
+          "type": "integer",
+          "x-display-name": "Error count"
+        },
         "fall": {
           "type": "integer",
+          "x-display-name": "Nr. of consecutive failed checks",
           "x-nullable": true
         },
         "fastinter": {
           "type": "integer",
+          "x-nullable": true
+        },
+        "force_sslv3": {
+          "type": "string",
+          "enum": [
+            "enabled",
+            "disabled"
+          ]
+        },
+        "force_tlsv10": {
+          "type": "string",
+          "enum": [
+            "enabled",
+            "disabled"
+          ]
+        },
+        "force_tlsv11": {
+          "type": "string",
+          "enum": [
+            "enabled",
+            "disabled"
+          ]
+        },
+        "force_tlsv12": {
+          "type": "string",
+          "enum": [
+            "enabled",
+            "disabled"
+          ]
+        },
+        "force_tlsv13": {
+          "type": "string",
+          "enum": [
+            "enabled",
+            "disabled"
+          ]
+        },
+        "health_check_port": {
+          "type": "integer",
+          "maximum": 65535,
+          "minimum": 1,
           "x-nullable": true
         },
         "init-addr": {
@@ -25402,11 +34724,163 @@ func init() {
           "type": "integer",
           "x-nullable": true
         },
+        "log_proto": {
+          "type": "string",
+          "enum": [
+            "legacy",
+            "octet-count"
+          ]
+        },
+        "max_reuse": {
+          "type": "integer",
+          "x-nullable": true
+        },
+        "maxconn": {
+          "type": "integer",
+          "x-display-name": "Max Concurrent Connections",
+          "x-nullable": true
+        },
+        "maxqueue": {
+          "type": "integer",
+          "x-display-name": "Max Number of Connections",
+          "x-nullable": true
+        },
+        "minconn": {
+          "type": "integer",
+          "x-nullable": true
+        },
+        "name": {
+          "type": "string",
+          "pattern": "^[^\\s]+$",
+          "x-nullable": false
+        },
+        "namespace": {
+          "type": "string"
+        },
+        "no_sslv3": {
+          "type": "string",
+          "enum": [
+            "enabled",
+            "disabled"
+          ]
+        },
+        "no_tlsv10": {
+          "type": "string",
+          "enum": [
+            "enabled",
+            "disabled"
+          ]
+        },
+        "no_tlsv11": {
+          "type": "string",
+          "enum": [
+            "enabled",
+            "disabled"
+          ]
+        },
+        "no_tlsv12": {
+          "type": "string",
+          "enum": [
+            "enabled",
+            "disabled"
+          ]
+        },
+        "no_tlsv13": {
+          "type": "string",
+          "enum": [
+            "enabled",
+            "disabled"
+          ]
+        },
+        "no_verifyhost": {
+          "type": "string",
+          "enum": [
+            "enabled",
+            "disabled"
+          ]
+        },
+        "npn": {
+          "type": "string",
+          "x-dependency": {
+            "ssl": {
+              "value": "enabled"
+            }
+          }
+        },
+        "observe": {
+          "type": "string",
+          "enum": [
+            "layer4",
+            "layer7"
+          ],
+          "x-dependency": {
+            "ssl": {
+              "value": "enabled"
+            }
+          }
+        },
+        "on-error": {
+          "type": "string",
+          "enum": [
+            "fastinter",
+            "fail-check",
+            "sudden-death",
+            "mark-down"
+          ]
+        },
+        "on-marked-down": {
+          "type": "string",
+          "enum": [
+            "shutdown-sessions"
+          ]
+        },
+        "on-marked-up": {
+          "type": "string",
+          "enum": [
+            "shutdown-backup-sessions"
+          ]
+        },
+        "pool_low_conn": {
+          "type": "integer",
+          "x-nullable": true
+        },
+        "pool_max_conn": {
+          "type": "integer",
+          "x-nullable": true
+        },
+        "pool_purge_delay": {
+          "type": "integer",
+          "x-nullable": true
+        },
         "port": {
           "type": "integer",
           "maximum": 65535,
           "minimum": 1,
           "x-nullable": true
+        },
+        "proto": {
+          "type": "string",
+          "pattern": "^[^\\s]+$"
+        },
+        "proxy-v2-options": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "ssl",
+              "cert-cn",
+              "ssl-cipher",
+              "cert-sig",
+              "cert-key",
+              "authority",
+              "crc32c",
+              "unique-id"
+            ]
+          }
+        },
+        "redir": {
+          "type": "string",
+          "x-display-name": "Prefix"
         },
         "resolve-net": {
           "type": "string",
@@ -25420,11 +34894,19 @@ func init() {
         "resolve-prefer": {
           "type": "string",
           "pattern": "^[^\\s]+$",
+          "enum": [
+            "ipv4",
+            "ipv6"
+          ],
           "x-dependency": {
             "resolvers": {
               "required": true
             }
           }
+        },
+        "resolve_opts": {
+          "type": "string",
+          "pattern": "^[^,\\s][^\\,]*[^,\\s]*$"
         },
         "resolvers": {
           "type": "string",
@@ -25438,6 +34920,34 @@ func init() {
           "type": "integer",
           "x-nullable": true
         },
+        "send-proxy": {
+          "type": "string",
+          "enum": [
+            "enabled",
+            "disabled"
+          ]
+        },
+        "send-proxy-v2": {
+          "type": "string",
+          "enum": [
+            "enabled",
+            "disabled"
+          ]
+        },
+        "send_proxy_v2_ssl": {
+          "type": "string",
+          "enum": [
+            "enabled",
+            "disabled"
+          ]
+        },
+        "send_proxy_v2_ssl_cn": {
+          "type": "string",
+          "enum": [
+            "enabled",
+            "disabled"
+          ]
+        },
         "slowstart": {
           "type": "integer",
           "x-nullable": true
@@ -25445,6 +34955,120 @@ func init() {
         "sni": {
           "type": "string",
           "pattern": "^[^\\s]+$"
+        },
+        "socks4": {
+          "type": "string",
+          "pattern": "^[^\\s]+$",
+          "x-dependency": {
+            "check-via-socks4": {
+              "required": true
+            }
+          }
+        },
+        "source": {
+          "type": "string"
+        },
+        "ssl": {
+          "type": "string",
+          "enum": [
+            "enabled",
+            "disabled"
+          ]
+        },
+        "ssl_certificate": {
+          "type": "string",
+          "pattern": "^[^\\s]+$",
+          "x-dependency": {
+            "ssl": {
+              "value": "enabled"
+            }
+          }
+        },
+        "ssl_max_ver": {
+          "type": "string",
+          "enum": [
+            "SSLv3",
+            "TLSv1.0",
+            "TLSv1.1",
+            "TLSv1.2",
+            "TLSv1.3"
+          ]
+        },
+        "ssl_min_ver": {
+          "type": "string",
+          "enum": [
+            "SSLv3",
+            "TLSv1.0",
+            "TLSv1.1",
+            "TLSv1.2",
+            "TLSv1.3"
+          ]
+        },
+        "ssl_reuse": {
+          "type": "string",
+          "enum": [
+            "enabled",
+            "disabled"
+          ]
+        },
+        "stick": {
+          "type": "string",
+          "enum": [
+            "enabled",
+            "disabled"
+          ]
+        },
+        "tcp_ut": {
+          "type": "integer"
+        },
+        "tfo": {
+          "type": "string",
+          "enum": [
+            "enabled",
+            "disabled"
+          ]
+        },
+        "tls_tickets": {
+          "type": "string",
+          "enum": [
+            "enabled",
+            "disabled"
+          ],
+          "x-dependency": {
+            "ssl": {
+              "value": "enabled"
+            }
+          }
+        },
+        "track": {
+          "type": "string"
+        },
+        "verify": {
+          "type": "string",
+          "enum": [
+            "none",
+            "required"
+          ],
+          "x-dependency": {
+            "ssl": {
+              "value": "enabled"
+            }
+          }
+        },
+        "verifyhost": {
+          "type": "string",
+          "x-dependency": {
+            "ssl": {
+              "value": "enabled"
+            },
+            "verify": {
+              "value": "required"
+            }
+          }
+        },
+        "weight": {
+          "type": "integer",
+          "x-nullable": true
         }
       }
     },
@@ -25469,7 +35093,8 @@ func init() {
             "mysql-check",
             "pgsql-check",
             "tcp-check",
-            "redis-check"
+            "redis-check",
+            "httpchk"
           ],
           "x-display-name": "Advanced Check"
         },
@@ -25620,8 +35245,8 @@ func init() {
             "safe"
           ]
         },
-        "httpchk": {
-          "$ref": "#/definitions/httpchk"
+        "httpchk_params": {
+          "$ref": "#/definitions/httpchk_params"
         },
         "httplog": {
           "type": "boolean",
@@ -25665,6 +35290,15 @@ func init() {
             "http"
           ]
         },
+        "monitor_uri": {
+          "$ref": "#/definitions/monitor_uri"
+        },
+        "mysql_check_params": {
+          "$ref": "#/definitions/mysql_check_params"
+        },
+        "pgsql_check_params": {
+          "$ref": "#/definitions/pgsql_check_params"
+        },
         "queue_timeout": {
           "type": "integer",
           "x-nullable": true
@@ -25680,12 +35314,19 @@ func init() {
           "type": "integer",
           "x-nullable": true
         },
+        "smtpchk_params": {
+          "$ref": "#/definitions/smtpchk_params"
+        },
         "stats_options": {
           "$ref": "#/definitions/stats_options"
         },
         "tcplog": {
           "type": "boolean",
           "x-display-name": "TCP Log"
+        },
+        "tunnel_timeout": {
+          "type": "integer",
+          "x-nullable": true
         },
         "unique_id_format": {
           "type": "string",
@@ -25867,7 +35508,7 @@ func init() {
       },
       "additionalProperties": false,
       "example": {
-        "id": 0,
+        "index": 0,
         "trace_name": "name",
         "trace_rnd_parsing": true,
         "type": "trace"
@@ -26075,6 +35716,12 @@ func init() {
             "tcp"
           ]
         },
+        "monitor_fail": {
+          "$ref": "#/definitions/monitor_fail"
+        },
+        "monitor_uri": {
+          "$ref": "#/definitions/monitor_uri"
+        },
         "name": {
           "type": "string",
           "pattern": "^[A-Za-z0-9-_.:]+$",
@@ -26157,6 +35804,26 @@ func init() {
           "pattern": "^[^\\s]+$",
           "x-display-name": "Group"
         },
+        "log_send_hostname": {
+          "type": "object",
+          "required": [
+            "enabled"
+          ],
+          "properties": {
+            "enabled": {
+              "type": "string",
+              "enum": [
+                "enabled",
+                "disabled"
+              ]
+            },
+            "param": {
+              "type": "string",
+              "pattern": "^[^\\s]+$"
+            }
+          },
+          "x-display-name": "Log Send Hostname"
+        },
         "lua_loads": {
           "type": "array",
           "items": {
@@ -26214,6 +35881,14 @@ func init() {
         "ssl_default_server_options": {
           "type": "string",
           "x-display-name": "SSL Default Server Options"
+        },
+        "ssl_mode_async": {
+          "type": "string",
+          "enum": [
+            "enabled",
+            "disabled"
+          ],
+          "x-display-name": "Asynchronous TLS I/O operations"
         },
         "stats_timeout": {
           "type": "integer",
@@ -26419,7 +36094,7 @@ func init() {
               ]
             }
           },
-          "x-nullable": false
+          "x-nullable": true
         },
         "expr": {
           "type": "string",
@@ -26441,7 +36116,6 @@ func init() {
         },
         "hdr_format": {
           "type": "string",
-          "pattern": "^[^\\s]+$",
           "x-dependency": {
             "type": {
               "required": true,
@@ -26457,7 +36131,6 @@ func init() {
         },
         "hdr_match": {
           "type": "string",
-          "pattern": "^[^\\s]+$",
           "x-dependency": {
             "type": {
               "required": true,
@@ -26471,7 +36144,6 @@ func init() {
         },
         "hdr_name": {
           "type": "string",
-          "pattern": "^[^\\s]+$",
           "x-dependency": {
             "type": {
               "required": true,
@@ -26676,14 +36348,17 @@ func init() {
           "enum": [
             301,
             302,
-            303
+            303,
+            307,
+            308
           ],
           "x-dependency": {
             "type": {
               "value": "redirect"
             }
           },
-          "x-display-name": "Redirect Code"
+          "x-display-name": "Redirect Code",
+          "x-nullable": true
         },
         "redir_option": {
           "type": "string",
@@ -26731,6 +36406,78 @@ func init() {
           },
           "x-display-name": "Resolvers"
         },
+        "return_content": {
+          "type": "string",
+          "x-dependency": {
+            "return_content_format": {
+              "required": true,
+              "value": [
+                "errofile",
+                "errorfiles",
+                "file",
+                "lf-file",
+                "string",
+                "lf-string"
+              ]
+            }
+          }
+        },
+        "return_content_format": {
+          "type": "string",
+          "enum": [
+            "default-errorfile",
+            "errorfile",
+            "errorfiles",
+            "file",
+            "lf-file",
+            "string",
+            "lf-string"
+          ],
+          "x-dependency": {
+            "type": {
+              "value": "return"
+            }
+          }
+        },
+        "return_content_type": {
+          "type": "string",
+          "x-dependency": {
+            "type": {
+              "value": "return"
+            }
+          },
+          "x-display-name": "Return content type",
+          "x-nullable": true
+        },
+        "return_hdrs": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/HTTPRequestRuleReturnHdrsItems0"
+          },
+          "x-dependency": {
+            "return_content_format": {
+              "value": [
+                "file",
+                "lf-file",
+                "string",
+                "lf-string"
+              ]
+            }
+          },
+          "x-go-name": "ReturnHeaders"
+        },
+        "return_status_code": {
+          "type": "integer",
+          "maximum": 599,
+          "minimum": 200,
+          "x-dependency": {
+            "type": {
+              "value": "return"
+            }
+          },
+          "x-display-name": "Return Error Code",
+          "x-nullable": true
+        },
         "sc_expr": {
           "type": "string",
           "x-dependency": {
@@ -26764,6 +36511,15 @@ func init() {
           },
           "x-display-name": "ScSet Integer Value",
           "x-nullable": true
+        },
+        "service_name": {
+          "type": "string",
+          "x-dependency": {
+            "type": {
+              "required": true,
+              "value": "use-service"
+            }
+          }
         },
         "spoe_engine": {
           "type": "string",
@@ -26924,7 +36680,9 @@ func init() {
             "silent-drop",
             "unset-var",
             "strict-mode",
-            "lua"
+            "lua",
+            "use-service",
+            "return"
           ],
           "x-nullable": false
         },
@@ -26993,7 +36751,7 @@ func init() {
         "cond_test": "{ src 192.168.0.0/16 }",
         "hdr_format": "%T",
         "hdr_name": "X-Haproxy-Current-Date",
-        "id": 0,
+        "index": 0,
         "type": "add-header"
       }
     },
@@ -27087,7 +36845,6 @@ func init() {
         },
         "hdr_format": {
           "type": "string",
-          "pattern": "^[^\\s]+$",
           "x-dependency": {
             "type": {
               "required": true,
@@ -27103,7 +36860,6 @@ func init() {
         },
         "hdr_match": {
           "type": "string",
-          "pattern": "^[^\\s]+$",
           "x-dependency": {
             "type": {
               "required": true,
@@ -27117,7 +36873,6 @@ func init() {
         },
         "hdr_name": {
           "type": "string",
-          "pattern": "^[^\\s]+$",
           "x-dependency": {
             "type": {
               "required": true,
@@ -27241,14 +36996,17 @@ func init() {
           "enum": [
             301,
             302,
-            303
+            303,
+            307,
+            308
           ],
           "x-dependency": {
             "type": {
               "value": "redirect"
             }
           },
-          "x-display-name": "Redirect Code"
+          "x-display-name": "Redirect Code",
+          "x-nullable": true
         },
         "redir_option": {
           "type": "string",
@@ -27526,7 +37284,7 @@ func init() {
         "cond_test": "{ src 192.168.0.0/16 }",
         "hdr_format": "%T",
         "hdr_name": "X-Haproxy-Current-Date",
-        "id": 0,
+        "index": 0,
         "type": "add-header"
       }
     },
@@ -27538,7 +37296,7 @@ func init() {
         "$ref": "#/definitions/http_response_rule"
       }
     },
-    "httpchk": {
+    "httpchk_params": {
       "type": "object",
       "properties": {
         "method": {
@@ -27821,6 +37579,9 @@ func init() {
         },
         "id": {
           "type": "string"
+        },
+        "storage_name": {
+          "type": "string"
         }
       }
     },
@@ -27855,6 +37616,50 @@ func init() {
       "title": "Map Files Array",
       "items": {
         "$ref": "#/definitions/map"
+      }
+    },
+    "monitor_fail": {
+      "type": "object",
+      "required": [
+        "cond",
+        "cond_test"
+      ],
+      "properties": {
+        "cond": {
+          "type": "string",
+          "enum": [
+            "if",
+            "unless"
+          ],
+          "x-display-name": "Condition"
+        },
+        "cond_test": {
+          "type": "string",
+          "x-dependency": {
+            "cond": {
+              "required": true
+            }
+          },
+          "x-display-name": "Condition Test"
+        }
+      }
+    },
+    "monitor_uri": {
+      "type": "string"
+    },
+    "mysql_check_params": {
+      "type": "object",
+      "properties": {
+        "client_version": {
+          "type": "string",
+          "enum": [
+            "pre-41",
+            "post-41"
+          ]
+        },
+        "username": {
+          "type": "string"
+        }
       }
     },
     "nameserver": {
@@ -28652,6 +38457,14 @@ func init() {
         "$ref": "#/definitions/peer_section"
       }
     },
+    "pgsql_check_params": {
+      "type": "object",
+      "properties": {
+        "username": {
+          "type": "string"
+        }
+      }
+    },
     "process_info": {
       "type": "object",
       "properties": {
@@ -29089,14 +38902,14 @@ func init() {
         "port": {
           "type": "integer",
           "maximum": 65535,
-          "minimum": 0,
+          "minimum": 1,
           "x-nullable": true,
           "readOnly": true
         }
       },
       "example": {
         "address": "127.0.0.5",
-        "admin_state": "up",
+        "admin_state": "ready",
         "operational_state": "up",
         "port": 80,
         "server_id": 1,
@@ -29175,6 +38988,13 @@ func init() {
             "disabled"
           ]
         },
+        "check-send-proxy": {
+          "type": "string",
+          "enum": [
+            "enabled",
+            "disabled"
+          ]
+        },
         "check-sni": {
           "type": "string",
           "pattern": "^[^\\s]+$"
@@ -29186,17 +39006,102 @@ func init() {
             "disabled"
           ]
         },
+        "check_alpn": {
+          "type": "string",
+          "pattern": "^[^\\s]+$",
+          "x-display-name": "Protocols"
+        },
+        "check_proto": {
+          "type": "string",
+          "pattern": "^[^\\s]+$",
+          "x-display-name": "Name"
+        },
+        "check_via_socks4": {
+          "type": "string",
+          "enum": [
+            "enabled",
+            "disabled"
+          ]
+        },
+        "ciphers": {
+          "type": "string",
+          "x-dependency": {
+            "ssl": {
+              "value": "enabled"
+            }
+          }
+        },
+        "ciphersuites": {
+          "type": "string",
+          "x-dependency": {
+            "ssl": {
+              "value": "enabled"
+            }
+          }
+        },
         "cookie": {
           "type": "string",
           "pattern": "^[^\\s]+$"
+        },
+        "crl_file": {
+          "type": "string",
+          "x-dependency": {
+            "ssl": {
+              "value": "enabled"
+            }
+          }
         },
         "downinter": {
           "type": "integer",
           "x-nullable": true
         },
+        "error_limit": {
+          "type": "integer",
+          "x-display-name": "Error count"
+        },
+        "fall": {
+          "type": "integer",
+          "x-display-name": "Nr. of consecutive failed checks",
+          "x-nullable": true
+        },
         "fastinter": {
           "type": "integer",
           "x-nullable": true
+        },
+        "force_sslv3": {
+          "type": "string",
+          "enum": [
+            "enabled",
+            "disabled"
+          ]
+        },
+        "force_tlsv10": {
+          "type": "string",
+          "enum": [
+            "enabled",
+            "disabled"
+          ]
+        },
+        "force_tlsv11": {
+          "type": "string",
+          "enum": [
+            "enabled",
+            "disabled"
+          ]
+        },
+        "force_tlsv12": {
+          "type": "string",
+          "enum": [
+            "enabled",
+            "disabled"
+          ]
+        },
+        "force_tlsv13": {
+          "type": "string",
+          "enum": [
+            "enabled",
+            "disabled"
+          ]
         },
         "health_check_port": {
           "type": "integer",
@@ -29204,13 +39109,25 @@ func init() {
           "minimum": 1,
           "x-nullable": true
         },
+        "id": {
+          "type": "integer",
+          "x-nullable": true
+        },
         "init-addr": {
           "type": "string",
-          "pattern": "^[^\\s]+$"
+          "pattern": "^[^\\s]+$",
+          "x-nullable": true
         },
         "inter": {
           "type": "integer",
           "x-nullable": true
+        },
+        "log_proto": {
+          "type": "string",
+          "enum": [
+            "legacy",
+            "octet-count"
+          ]
         },
         "maintenance": {
           "type": "string",
@@ -29219,15 +39136,93 @@ func init() {
             "disabled"
           ]
         },
+        "max_reuse": {
+          "type": "integer",
+          "x-nullable": true
+        },
         "maxconn": {
           "type": "integer",
-          "x-display-name": "Max Connections",
+          "x-display-name": "Max Concurrent Connections",
+          "x-nullable": true
+        },
+        "maxqueue": {
+          "type": "integer",
+          "x-display-name": "Max Number of Connections",
+          "x-nullable": true
+        },
+        "minconn": {
+          "type": "integer",
           "x-nullable": true
         },
         "name": {
           "type": "string",
           "pattern": "^[^\\s]+$",
           "x-nullable": false
+        },
+        "namespace": {
+          "type": "string"
+        },
+        "no_sslv3": {
+          "type": "string",
+          "enum": [
+            "enabled",
+            "disabled"
+          ]
+        },
+        "no_tlsv10": {
+          "type": "string",
+          "enum": [
+            "enabled",
+            "disabled"
+          ]
+        },
+        "no_tlsv11": {
+          "type": "string",
+          "enum": [
+            "enabled",
+            "disabled"
+          ]
+        },
+        "no_tlsv12": {
+          "type": "string",
+          "enum": [
+            "enabled",
+            "disabled"
+          ]
+        },
+        "no_tlsv13": {
+          "type": "string",
+          "enum": [
+            "enabled",
+            "disabled"
+          ]
+        },
+        "no_verifyhost": {
+          "type": "string",
+          "enum": [
+            "enabled",
+            "disabled"
+          ]
+        },
+        "npn": {
+          "type": "string",
+          "x-dependency": {
+            "ssl": {
+              "value": "enabled"
+            }
+          }
+        },
+        "observe": {
+          "type": "string",
+          "enum": [
+            "layer4",
+            "layer7"
+          ],
+          "x-dependency": {
+            "ssl": {
+              "value": "enabled"
+            }
+          }
         },
         "on-error": {
           "type": "string",
@@ -29249,6 +39244,18 @@ func init() {
           "enum": [
             "shutdown-backup-sessions"
           ]
+        },
+        "pool_low_conn": {
+          "type": "integer",
+          "x-nullable": true
+        },
+        "pool_max_conn": {
+          "type": "integer",
+          "x-nullable": true
+        },
+        "pool_purge_delay": {
+          "type": "integer",
+          "x-nullable": true
         },
         "port": {
           "type": "integer",
@@ -29276,9 +39283,13 @@ func init() {
             ]
           }
         },
+        "redir": {
+          "type": "string",
+          "x-display-name": "Prefix"
+        },
         "resolve-net": {
           "type": "string",
-          "pattern": "^[^\\s]+$",
+          "pattern": "^[^,\\s][^\\,]*[^,\\s]*$",
           "x-dependency": {
             "resolvers": {
               "required": true
@@ -29287,12 +39298,19 @@ func init() {
         },
         "resolve-prefer": {
           "type": "string",
-          "pattern": "^[^\\s]+$",
+          "enum": [
+            "ipv4",
+            "ipv6"
+          ],
           "x-dependency": {
             "resolvers": {
               "required": true
             }
           }
+        },
+        "resolve_opts": {
+          "type": "string",
+          "pattern": "^[^,\\s][^\\,]*[^,\\s]*$"
         },
         "resolvers": {
           "type": "string",
@@ -29301,6 +39319,10 @@ func init() {
             "operation": "getResolvers",
             "property": "name"
           }
+        },
+        "rise": {
+          "type": "integer",
+          "x-nullable": true
         },
         "send-proxy": {
           "type": "string",
@@ -29316,6 +39338,20 @@ func init() {
             "disabled"
           ]
         },
+        "send_proxy_v2_ssl": {
+          "type": "string",
+          "enum": [
+            "enabled",
+            "disabled"
+          ]
+        },
+        "send_proxy_v2_ssl_cn": {
+          "type": "string",
+          "enum": [
+            "enabled",
+            "disabled"
+          ]
+        },
         "slowstart": {
           "type": "integer",
           "x-nullable": true
@@ -29323,6 +39359,18 @@ func init() {
         "sni": {
           "type": "string",
           "pattern": "^[^\\s]+$"
+        },
+        "socks4": {
+          "type": "string",
+          "pattern": "^[^\\s]+$",
+          "x-dependency": {
+            "check-via-socks4": {
+              "required": true
+            }
+          }
+        },
+        "source": {
+          "type": "string"
         },
         "ssl": {
           "type": "string",
@@ -29350,6 +39398,50 @@ func init() {
             }
           }
         },
+        "ssl_max_ver": {
+          "type": "string",
+          "enum": [
+            "SSLv3",
+            "TLSv1.0",
+            "TLSv1.1",
+            "TLSv1.2",
+            "TLSv1.3"
+          ]
+        },
+        "ssl_min_ver": {
+          "type": "string",
+          "enum": [
+            "SSLv3",
+            "TLSv1.0",
+            "TLSv1.1",
+            "TLSv1.2",
+            "TLSv1.3"
+          ]
+        },
+        "ssl_reuse": {
+          "type": "string",
+          "enum": [
+            "enabled",
+            "disabled"
+          ]
+        },
+        "stick": {
+          "type": "string",
+          "enum": [
+            "enabled",
+            "disabled"
+          ]
+        },
+        "tcp_ut": {
+          "type": "integer"
+        },
+        "tfo": {
+          "type": "string",
+          "enum": [
+            "enabled",
+            "disabled"
+          ]
+        },
         "tls_tickets": {
           "type": "string",
           "enum": [
@@ -29361,6 +39453,9 @@ func init() {
               "value": "enabled"
             }
           }
+        },
+        "track": {
+          "type": "string"
         },
         "verify": {
           "type": "string",
@@ -29374,6 +39469,17 @@ func init() {
             }
           }
         },
+        "verifyhost": {
+          "type": "string",
+          "x-dependency": {
+            "ssl": {
+              "value": "enabled"
+            },
+            "verify": {
+              "value": "required"
+            }
+          }
+        },
         "weight": {
           "type": "integer",
           "x-nullable": true
@@ -29383,7 +39489,6 @@ func init() {
       "example": {
         "address": "10.1.1.1",
         "check": "enabled",
-        "max-connections": 500,
         "name": "www",
         "port": 8080,
         "weight": 80
@@ -29438,7 +39543,7 @@ func init() {
       "example": {
         "cond": "if",
         "cond_test": "{ req_ssl_sni -i www.example.com }",
-        "id": 0,
+        "index": 0,
         "target_server": "www"
       }
     },
@@ -29571,6 +39676,406 @@ func init() {
         "$ref": "#/definitions/site"
       }
     },
+    "smtpchk_params": {
+      "type": "object",
+      "properties": {
+        "domain": {
+          "type": "string"
+        },
+        "hello": {
+          "type": "string"
+        }
+      }
+    },
+    "spoe_agent": {
+      "description": "SPOE agent configuration",
+      "type": "object",
+      "title": "SPOE agent",
+      "required": [
+        "name"
+      ],
+      "properties": {
+        "async": {
+          "type": "string",
+          "enum": [
+            "enabled",
+            "disabled"
+          ]
+        },
+        "continue-on-error": {
+          "type": "string",
+          "enum": [
+            "enabled"
+          ]
+        },
+        "dontlog-normal": {
+          "type": "string",
+          "enum": [
+            "enabled",
+            "disabled"
+          ]
+        },
+        "engine-name": {
+          "type": "string"
+        },
+        "force-set-var": {
+          "type": "string",
+          "enum": [
+            "enabled"
+          ]
+        },
+        "groups": {
+          "type": "string"
+        },
+        "hello_timeout": {
+          "type": "integer"
+        },
+        "idle_timeout": {
+          "type": "integer"
+        },
+        "log": {
+          "$ref": "#/definitions/log_targets"
+        },
+        "max-frame-size": {
+          "type": "integer"
+        },
+        "max-waiting-frames": {
+          "type": "integer"
+        },
+        "maxconnrate": {
+          "type": "integer"
+        },
+        "maxerrrate": {
+          "type": "integer"
+        },
+        "messages": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "option_set-on-error": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9-_.]+$"
+        },
+        "option_set-process-time": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9-_.]+$"
+        },
+        "option_set-total-time": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9-_.]+$"
+        },
+        "option_var-prefix": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9-_.]+$"
+        },
+        "pipelining": {
+          "type": "string",
+          "enum": [
+            "enabled",
+            "disabled"
+          ]
+        },
+        "processing_timeout": {
+          "type": "integer"
+        },
+        "register-var-names": {
+          "type": "string"
+        },
+        "send-frag-payload": {
+          "type": "string",
+          "enum": [
+            "enabled",
+            "disabled"
+          ]
+        },
+        "use-backend": {
+          "type": "string"
+        }
+      }
+    },
+    "spoe_agents": {
+      "description": "SPOE Agents of one scope in SPOE file",
+      "type": "array",
+      "title": "SPOE Agents",
+      "items": {
+        "$ref": "#/definitions/spoe_agent"
+      }
+    },
+    "spoe_files": {
+      "description": "SPOE files",
+      "type": "array",
+      "title": "SPOE files",
+      "items": {
+        "type": "string"
+      }
+    },
+    "spoe_group": {
+      "description": "SPOE group section configuration",
+      "type": "object",
+      "title": "SPOE group",
+      "required": [
+        "name"
+      ],
+      "properties": {
+        "messages": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        }
+      }
+    },
+    "spoe_groups": {
+      "description": "SPOE Groups of one scope in SPOE file",
+      "type": "array",
+      "title": "SPOE Groups",
+      "items": {
+        "$ref": "#/definitions/spoe_group"
+      }
+    },
+    "spoe_message": {
+      "description": "SPOE message section configuration",
+      "type": "object",
+      "title": "SPOE message",
+      "required": [
+        "name"
+      ],
+      "properties": {
+        "acl": {
+          "$ref": "#/definitions/acls"
+        },
+        "args": {
+          "type": "string"
+        },
+        "event": {
+          "type": "object",
+          "required": [
+            "name"
+          ],
+          "properties": {
+            "cond": {
+              "type": "string",
+              "enum": [
+                "if",
+                "unless"
+              ],
+              "x-display-name": "Condition"
+            },
+            "cond_test": {
+              "type": "string",
+              "x-dependency": {
+                "cond": {
+                  "required": true
+                }
+              },
+              "x-display-name": "Condition Test"
+            },
+            "name": {
+              "type": "string",
+              "enum": [
+                "on-client-session",
+                "on-server-session",
+                "on-frontend-tcp-request",
+                "on-backend-tcp-request",
+                "on-tcp-response",
+                "on-frontend-http-request",
+                "on-backend-http-request",
+                "on-http-response"
+              ]
+            }
+          }
+        },
+        "name": {
+          "type": "string"
+        }
+      }
+    },
+    "spoe_messages": {
+      "description": "SPOE Messages of one scope in SPOE file",
+      "type": "array",
+      "title": "SPOE Messages",
+      "items": {
+        "$ref": "#/definitions/spoe_message"
+      }
+    },
+    "spoe_scope": {
+      "description": "SPOE scope name",
+      "type": "string",
+      "title": "SPOE scope"
+    },
+    "spoe_scopes": {
+      "description": "All SPOE Scopes",
+      "type": "array",
+      "title": "SPOE Scopes",
+      "items": {
+        "$ref": "#/definitions/spoe_scope"
+      }
+    },
+    "spoe_transaction": {
+      "description": "SPOE configuration transaction",
+      "type": "object",
+      "title": "SPOE configuration transaction",
+      "properties": {
+        "_version": {
+          "type": "integer"
+        },
+        "id": {
+          "type": "string",
+          "pattern": "^[^\\s]+$"
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "failed",
+            "in_progress",
+            "success"
+          ]
+        }
+      },
+      "example": {
+        "_version": 2,
+        "id": "273e3385-2d0c-4fb1-aa27-93cbb31ff203",
+        "status": "in_progress"
+      }
+    },
+    "spoe_transactions": {
+      "description": "SPOE Configuration transactions array",
+      "type": "array",
+      "title": "SPOE Transactions array",
+      "items": {
+        "$ref": "#/definitions/spoe_transaction"
+      }
+    },
+    "ssl_cert_entries": {
+      "description": "Array of entries of runtime SSL Certificate Entry",
+      "type": "array",
+      "title": "SSL Certificate Entries",
+      "items": {
+        "$ref": "#/definitions/ssl_cert_entry"
+      }
+    },
+    "ssl_cert_entry": {
+      "description": "One SSL/TLS certificate",
+      "type": "object",
+      "title": "One SSL Certificate Entry",
+      "properties": {
+        "algorithm": {
+          "type": "string"
+        },
+        "chain_issuer": {
+          "type": "string"
+        },
+        "chain_subject": {
+          "type": "string"
+        },
+        "issuer": {
+          "type": "string"
+        },
+        "not_after": {
+          "type": "string",
+          "format": "date"
+        },
+        "not_before": {
+          "type": "string",
+          "format": "date"
+        },
+        "serial": {
+          "type": "string"
+        },
+        "sha1_finger_print": {
+          "type": "string"
+        },
+        "status": {
+          "type": "string"
+        },
+        "storage_name": {
+          "type": "string"
+        },
+        "subject": {
+          "type": "string"
+        },
+        "subject_alternative_names": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "ssl_certificate": {
+      "description": "A file containing one or more SSL/TLS certificates and keys",
+      "type": "object",
+      "title": "SSL File",
+      "properties": {
+        "description": {
+          "type": "string"
+        },
+        "file": {
+          "type": "string"
+        },
+        "storage_name": {
+          "type": "string"
+        }
+      }
+    },
+    "ssl_certificates": {
+      "description": "Array of ssl certificate files",
+      "type": "array",
+      "title": "SSL Files Array",
+      "items": {
+        "$ref": "#/definitions/ssl_certificate"
+      }
+    },
+    "ssl_crt_list": {
+      "description": "One SSL/TLS certificate",
+      "type": "object",
+      "title": "crt-list",
+      "properties": {
+        "file": {
+          "type": "string"
+        }
+      }
+    },
+    "ssl_crt_list_entries": {
+      "description": "Array of entries of runtime SSL Certificate Entry",
+      "type": "array",
+      "title": "SSL Certificate Entries",
+      "items": {
+        "$ref": "#/definitions/ssl_crt_list_entry"
+      }
+    },
+    "ssl_crt_list_entry": {
+      "description": "One SSL/TLS certificate",
+      "type": "object",
+      "title": "One crt-list Entry",
+      "properties": {
+        "file": {
+          "type": "string"
+        },
+        "line_number": {
+          "type": "string"
+        },
+        "sni_filters": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "ssl_bind_config": {
+          "type": "string"
+        }
+      }
+    },
+    "ssl_crt_lists": {
+      "description": "Array of entries of runtime crt-list",
+      "type": "array",
+      "title": "SSL crt-list",
+      "items": {
+        "$ref": "#/definitions/ssl_crt_list"
+      }
+    },
     "stats_options": {
       "type": "object",
       "properties": {
@@ -29667,9 +40172,9 @@ func init() {
       },
       "additionalProperties": false,
       "example": {
-        "id": 0,
+        "index": 0,
         "pattern": "src",
-        "type": "storeonly"
+        "type": "match"
       }
     },
     "stick_rules": {
@@ -29777,6 +40282,10 @@ func init() {
           "x-nullable": true
         },
         "gpc1_rate": {
+          "type": "integer",
+          "x-nullable": true
+        },
+        "gpt0": {
           "type": "integer",
           "x-nullable": true
         },
@@ -30270,8 +40779,8 @@ func init() {
       "example": {
         "cond": "if",
         "cond_test": "{ src 192.168.0.0/16 }",
-        "id": 0,
-        "type": "accept"
+        "index": 0,
+        "type": "connection"
       }
     },
     "tcp_request_rules": {
@@ -30389,8 +40898,8 @@ func init() {
       "example": {
         "cond": "if",
         "cond_test": "{ src 192.168.0.0/16 }",
-        "id": 0,
-        "type": "accept"
+        "index": 0,
+        "type": "content"
       }
     },
     "tcp_response_rules": {
@@ -30417,6 +40926,7 @@ func init() {
           "type": "string",
           "enum": [
             "failed",
+            "outdated",
             "in_progress",
             "success"
           ]
@@ -30443,6 +40953,13 @@ func init() {
       "default": false,
       "description": "If set, do a force reload, do not wait for the configured reload-delay. Cannot be used when transaction is specified, as changes in transaction are not applied directly to configuration.",
       "name": "force_reload",
+      "in": "query"
+    },
+    "skip_reload": {
+      "type": "boolean",
+      "default": false,
+      "description": "If set, no reload will be initiated after update",
+      "name": "skip_reload",
       "in": "query"
     },
     "transaction_id": {
@@ -30500,6 +41017,19 @@ func init() {
         }
       }
     },
+    "NotAcceptable": {
+      "description": "The specified resource cannot be handled",
+      "schema": {
+        "$ref": "#/definitions/error"
+      },
+      "headers": {
+        "Configuration-Version": {
+          "type": "integer",
+          "default": 0,
+          "description": "Configuration file version"
+        }
+      }
+    },
     "NotFound": {
       "description": "The specified resource was not found",
       "schema": {
@@ -30526,61 +41056,44 @@ func init() {
   ],
   "tags": [
     {
-      "description": "API autodiscover endpoints",
-      "name": "Discovery"
-    },
-    {
-      "name": "Information"
-    },
-    {
-      "name": "Specification"
-    },
-    {
-      "description": "Managing transactions. Configuration changes can be grouped in the transaction. You start the\ntransaction with trasactions POST, and call the configuration changes you need with parameter\ntransaction_id. When you want to commit the transaction, you call the transactions PUT and all changes\nin that transaction is commited. If you call a configuration change without the transaction_id,\ntransaction mechanism is implicitly called with one operation in transaction.\n",
-      "name": "Transactions"
-    },
-    {
-      "description": "Checking reload success. To avoid constant reloading we reload in intervals that are configurable when\nwith reload-delay option. When a change to configuration is made and force_reload url query string\nparameter is false we issue a request for reload, and return the reload ID in response header. You can\nthen use reloads endpoints to check the status of that reload ID. If force_reload is true, we override all\nof this and reload immediately.\n",
-      "name": "Reloads"
-    },
-    {
-      "description": "Managing sites (simple configuration mode). Sites are considered as one frontend with multiple backends\nconnected to it via default_backend or use-backend directives.\n",
-      "name": "Sites"
-    },
-    {
-      "description": "Stats container",
-      "name": "Stats"
-    },
-    {
-      "description": "Managing global configuration (advanced mode)",
-      "name": "Global"
-    },
-    {
-      "description": "Managing defaults configuration (advanced mode)",
-      "name": "Defaults"
-    },
-    {
-      "description": "Managing frontend configuration (advanced mode)",
-      "name": "Frontend"
+      "name": "ACL"
     },
     {
       "description": "Managing backend configurations (advanced mode)",
       "name": "Backend"
     },
     {
+      "name": "BackendSwitchingRule"
+    },
+    {
       "description": "Managing frontend bind configurations (advanced mode)",
       "name": "Bind"
     },
     {
-      "description": "Managing backend server configurations (advanced mode)",
-      "name": "Server"
+      "name": "Cluster"
     },
     {
       "description": "Raw HAProxy configuration management (advanced mode)",
       "name": "Configuration"
     },
     {
-      "name": "TCPRequestRule"
+      "description": "Managing defaults configuration (advanced mode)",
+      "name": "Defaults"
+    },
+    {
+      "description": "API autodiscover endpoints",
+      "name": "Discovery"
+    },
+    {
+      "name": "Filter"
+    },
+    {
+      "description": "Managing frontend configuration (advanced mode)",
+      "name": "Frontend"
+    },
+    {
+      "description": "Managing global configuration (advanced mode)",
+      "name": "Global"
     },
     {
       "name": "HTTPRequestRule"
@@ -30589,31 +41102,13 @@ func init() {
       "name": "HTTPResponseRule"
     },
     {
-      "name": "BackendSwitchingRule"
-    },
-    {
-      "name": "ServerSwitchingRule"
-    },
-    {
-      "name": "TCPResponseRule"
-    },
-    {
-      "name": "Filter"
-    },
-    {
-      "name": "StickRule"
-    },
-    {
-      "name": "StickTable"
+      "name": "Information"
     },
     {
       "name": "LogTarget"
     },
     {
-      "name": "ACL"
-    },
-    {
-      "name": "Resolver"
+      "name": "Maps"
     },
     {
       "name": "Nameserver"
@@ -30625,13 +41120,60 @@ func init() {
       "name": "PeerEntry"
     },
     {
-      "name": "Cluster"
+      "description": "Checking reload success. To avoid constant reloading we reload in intervals that are configurable when\nwith reload-delay option. When a change to configuration is made and force_reload url query string\nparameter is false we issue a request for reload, and return the reload ID in response header. You can\nthen use reloads endpoints to check the status of that reload ID. If force_reload is true, we override all\nof this and reload immediately.\n",
+      "name": "Reloads"
     },
     {
-      "name": "Maps"
+      "name": "Resolver"
+    },
+    {
+      "description": "Managing backend server configurations (advanced mode)",
+      "name": "Server"
+    },
+    {
+      "name": "ServerSwitchingRule"
+    },
+    {
+      "name": "ServiceDiscovery"
+    },
+    {
+      "description": "Managing sites (simple configuration mode). Sites are considered as one frontend with multiple backends\nconnected to it via default_backend or use-backend directives.\n",
+      "name": "Sites"
+    },
+    {
+      "name": "Specification"
     },
     {
       "name": "SpecificationOpenapiv3"
+    },
+    {
+      "name": "Spoe"
+    },
+    {
+      "name": "SpoeTransactions"
+    },
+    {
+      "description": "Stats container",
+      "name": "Stats"
+    },
+    {
+      "name": "StickRule"
+    },
+    {
+      "name": "StickTable"
+    },
+    {
+      "name": "Storage"
+    },
+    {
+      "name": "TCPRequestRule"
+    },
+    {
+      "name": "TCPResponseRule"
+    },
+    {
+      "description": "Managing transactions. Configuration changes can be grouped in the transaction. You start the\ntransaction with trasactions POST, and call the configuration changes you need with parameter\ntransaction_id. When you want to commit the transaction, you call the transactions PUT and all changes\nin that transaction is commited. If you call a configuration change without the transaction_id,\ntransaction mechanism is implicitly called with one operation in transaction.\n",
+      "name": "Transactions"
     }
   ],
   "externalDocs": {
